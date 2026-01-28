@@ -57,7 +57,7 @@
 
 <h1>Horror-Studio</h1>
 
-<!-- Кнопка создания -->
+<!-- Добавить историю -->
 <button class="add" onclick="location.href='author.html'">
   ➕ Добавить историю
 </button>
@@ -75,7 +75,6 @@ function loadStories() {
   const box = document.getElementById("stories");
   box.innerHTML = "";
 
-  // Берём список историй
   let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
 
   if (stories.length === 0) {
@@ -103,6 +102,7 @@ function loadStories() {
 =========================== */
 
 function playStory(index) {
+
   let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
 
   if (!stories[index]) {
@@ -110,16 +110,14 @@ function playStory(index) {
     return;
   }
 
-  // ✅ Сохраняем выбранную историю
-  localStorage.setItem("currentStory", JSON.stringify(stories[index]));
+  // ✅ Сохраняем индекс выбранной истории
+  localStorage.setItem("currentStoryIndex", index);
 
   // Переход в чат
   location.href = "play.html";
 }
 
-/* ===========================
-   Авто запуск
-=========================== */
+/* Авто запуск */
 loadStories();
 </script>
 
