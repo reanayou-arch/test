@@ -3,215 +3,176 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>Horror-Studio — Чат</title>
 
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #1c1c1c;
+      background: #111;
       color: white;
-      height: 100vh;
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
 
-    /* Верхняя панель */
-    .topbar {
-      height: 60px;
-      background: #111;
-      display: flex;
-      align-items: center;
-      padding: 0 15px;
-      font-size: 18px;
+    header {
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
       font-weight: bold;
+      background: #000;
       border-bottom: 1px solid #333;
     }
 
-    /* Чат */
-    .chat {
+    #chat {
       flex: 1;
       overflow-y: auto;
       padding: 15px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
-    /* Сообщение */
     .msg {
       max-width: 75%;
-      padding: 12px 14px;
+      padding: 12px 15px;
       border-radius: 18px;
       font-size: 16px;
       line-height: 1.3;
       word-wrap: break-word;
     }
 
-    /* NPC */
-    .npc {
+    .bot {
+      background: #2b2b2b;
       align-self: flex-start;
-      background: #2e2e2e;
       border-bottom-left-radius: 5px;
     }
 
-    /* Игрок */
-    .me {
+    .user {
+      background: darkred;
       align-self: flex-end;
-      background: #007aff;
       border-bottom-right-radius: 5px;
     }
 
-    /* Панель ввода */
-    .inputbar {
-      height: 65px;
+    footer {
       display: flex;
-      padding: 10px;
-      background: #111;
+      padding: 12px;
+      gap: 10px;
       border-top: 1px solid #333;
+      background: #000;
     }
 
     input {
       flex: 1;
-      border: none;
+      padding: 14px;
       border-radius: 20px;
-      padding: 12px 15px;
+      border: none;
       font-size: 16px;
       outline: none;
-      background: #2a2a2a;
-      color: white;
     }
 
     button {
-      margin-left: 10px;
+      background: darkred;
       border: none;
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      background: #007aff;
-      color: white;
+      width: 52px;
+      height: 52px;
       font-size: 18px;
       cursor: pointer;
+      color: white;
     }
 
-    button:active {
-      transform: scale(0.95);
+    .backBtn {
+      width: 100%;
+      border-radius: 15px;
+      margin: 10px auto;
+      padding: 14px;
+      font-size: 16px;
+      background: #333;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Верх -->
-  <div class="topbar">
-    Horror-Studio — Чат
-  </div>
+<header>Horror-Studio — Чат</header>
 
-  <!-- Чат -->
-  <div class="chat" id="chat"></div>
+<div id="chat"></div>
 
-  <!-- Ввод -->
-  <div class="inputbar">
-    <input id="input" placeholder="Напишите сообщение..." />
-    <button onclick="send()">➤</button>
-  </div>
+<footer>
+  <input id="text" placeholder="Напишите сообщение..." />
+  <button onclick="sendMsg()">➤</button>
+</footer>
+
+<button class="backBtn" onclick="goBack()">← Назад в меню</button>
 
 <script>
 /* ===========================
-   Загрузка истории
+   ✅ Диагностика истории
 =========================== */
 
 const chat = document.getElementById("chat");
-const input = document.getElementById("input");
+
+function addMessage(text, type="bot") {
+  const div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ===========================
+   ✅ Загрузка истории
+=========================== */
 
 let storyData = null;
 
-/* Берём story из URL */
-const params = new URLSearchParams(window.location.search);
-const storyFile = params.get("story");
+function loadStory() {
+  const raw = localStorage.getItem("currentStory");
 
-/* Берём story из localStorage */
-const localStory = localStorage.getItem("currentStory");
+  if (!raw) {
+    addMessage("❌ История не выбрана.\nВернитесь в меню и нажмите ▶ Играть.");
+    return false;
+  }
 
-/* Проверка */
-if (!storyFile && !localStory) {
-  addNPC("❌ История не выбрана. Вернитесь в меню.");
-} else {
-  loadStory();
+  try {
+    storyData = JSON.parse(raw);
+  } catch (e) {
+    addMessage("❌ Ошибка чтения истории (JSON повреждён).");
+    return false;
+  }
+
+  if (!storyData.startScene) {
+    addMessage("❌ В истории нет начальной сцены.");
+    return false;
+  }
+
+  addMessage("📖 Начало истории:\n" + storyData.startScene);
+  return true;
 }
 
 /* ===========================
-   Загрузка JSON
+   ✅ Groq продолжение
 =========================== */
-async function loadStory() {
 
-  /* Если история сохранена в браузере */
-  if (localStory) {
-    storyData = JSON.parse(localStory);
-    startChat();
+async function sendMsg() {
+  const input = document.getElementById("text");
+  const userText = input.value.trim();
+  if (!userText) return;
+
+  addMessage(userText, "user");
+  input.value = "";
+
+  if (!storyData) {
+    addMessage("❌ История не загружена.");
     return;
   }
 
-  /* Если история по файлу */
-  try {
-    const res = await fetch("/stories/" + storyFile);
-    storyData = await res.json();
-    startChat();
-  } catch (err) {
-    addNPC("❌ Ошибка загрузки истории.");
-  }
-}
-
-/* ===========================
-   Старт истории
-=========================== */
-function startChat() {
-  addNPC("📖 Начало истории:");
-  addNPC(storyData.startScene || "История пуста...");
-}
-
-/* ===========================
-   Добавление сообщений
-=========================== */
-function addNPC(text) {
-  const div = document.createElement("div");
-  div.className = "msg npc";
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function addMe(text) {
-  const div = document.createElement("div");
-  div.className = "msg me";
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-/* ===========================
-   Отправка игрока
-=========================== */
-async function send() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  addMe(text);
-  input.value = "";
-
-  await aiReply(text);
-}
-
-/* ===========================
-   Ответ ИИ (Groq)
-=========================== */
-async function aiReply(playerText) {
-
-  addNPC("...");
+  addMessage("⏳ Генерация продолжения...");
 
   try {
-    const res = await fetch("/api/chat", {
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -219,39 +180,49 @@ async function aiReply(playerText) {
         messages: [
           {
             role: "system",
-            content: `
-Ты — хоррор рассказчик.
-Продолжай историю строго в стиле ужаса.
-Не заканчивай резко.
-История: ${storyData.description}
-`
+            content:
+              "Ты хоррор-рассказчик. Продолжай историю в стиле чата Telegram. Короткие реплики. Атмосфера ужаса."
           },
-          { role: "user", content: playerText }
+          {
+            role: "assistant",
+            content: storyData.startScene
+          },
+          {
+            role: "user",
+            content: userText
+          }
         ]
       })
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    /* удалить "..." */
-    chat.lastChild.remove();
+    if (!data.choices) {
+      addMessage("❌ Ошибка ответа Groq:\n" + JSON.stringify(data));
+      return;
+    }
 
-    const answer =
-      data.choices?.[0]?.message?.content ||
-      "❌ Ошибка ответа ИИ.";
-
-    addNPC(answer);
+    const botReply = data.choices[0].message.content;
+    addMessage(botReply, "bot");
 
   } catch (err) {
-    chat.lastChild.remove();
-    addNPC("❌ Ошибка соединения с сервером.");
+    addMessage("❌ Ошибка соединения с сервером:\n" + err.message);
   }
 }
 
-/* Enter отправка */
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") send();
-});
+/* ===========================
+   Назад в меню
+=========================== */
+
+function goBack() {
+  location.href = "index.html";
+}
+
+/* ===========================
+   Авто запуск
+=========================== */
+
+loadStory();
 </script>
 
 </body>
