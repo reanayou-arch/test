@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Horror-Studio</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #3b2a2a, #111);
+      color: white;
+    }
+
+    .wrapper {
+      max-width: 430px;
+      margin: auto;
+      padding: 25px 15px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 38px;
+      margin-bottom: 25px;
+      letter-spacing: 2px;
+      font-family: Georgia, serif;
+    }
+
+    .add-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08);
+      color: white;
+      cursor: pointer;
+      margin-bottom: 25px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      margin: 15px 0;
+      opacity: 0.8;
+    }
+
+    .story-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .story-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .story-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .btn {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 6px;
+    }
+
+    .download {
+      background: rgba(0,255,0,0.15);
+      color: #b6ffb6;
+    }
+
+    .delete {
+      background: rgba(255,0,0,0.18);
+      color: #ffaaaa;
+    }
+
+    .character {
+      display: flex;
+      gap: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 10px;
+      margin-top: 10px;
+      align-items: flex-start;
+    }
+
+    .avatar {
+      width: 55px;
+      height: 55px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .char-info {
+      flex: 1;
+    }
+
+    .char-name {
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .char-role {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+
+    .char-secret {
+      font-size: 12px;
+      opacity: 0.65;
+      margin-top: 6px;
+    }
+
+    .char-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .edit {
+      background: rgba(255,255,0,0.15);
+      color: #fff3aa;
+    }
+
+    .version {
+      text-align: center;
+      opacity: 0.4;
+      margin-top: 30px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <h1>Horror-Studio</h1>
+
+    <button class="add-btn" onclick="location.href='author.html'">
+      ➕ Добавить историю
+    </button>
+
+    <div class="section-title">Список историй:</div>
+
+    <div id="stories"></div>
+
+    <div class="version">(Версия панели: V0.1.1)</div>
+  </div>
+
+<script>
+  // Заглушка: временная история для теста
+  const stories = [
+    {
+      title: "История",
+      characters: [
+        {
+          name: "Лена",
+          role: "Подруга главного героя",
+          personality: "Пугливая, держит что-то в секрете...",
+          avatar: "https://i.ibb.co/7bGZpWv/girl.jpg"
+        }
+      ]
+    }
+  ];
+
+  function renderStories() {
+    const container = document.getElementById("stories");
+    container.innerHTML = "";
+
+    stories.forEach((story, index) => {
+      const card = document.createElement("div");
+      card.className = "story-card";
+
+      card.innerHTML = `
+        <div class="story-header">
+          <div class="story-title">📖 ${story.title}</div>
+          <div>
+            <button class="btn download" onclick="downloadStory(${index})">⬇ Скачать</button>
+            <button class="btn delete" onclick="deleteStory(${index})">🗑 Удалить</button>
+          </div>
+        </div>
+
+        ${story.characters.map((c, i) => `
+          <div class="character">
+            <div class="avatar">
+              <img src="${c.avatar}">
+            </div>
+
+            <div class="char-info">
+              <div class="char-name">Имя: ${c.name}</div>
+              <div class="char-role">Роль: ${c.role}</div>
+              <div class="char-secret">
+                <b>Характер и тайны:</b><br>
+                ${c.personality}
+              </div>
+            </div>
+
+            <div class="char-actions">
+              <button class="btn edit">✏ Редактировать</button>
+              <button class="btn delete">🗑 Удалить</button>
+            </div>
+          </div>
+        `).join("")}
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  function downloadStory(index) {
+    const blob = new Blob(
+      [JSON.stringify(stories[index], null, 2)],
+      { type: "application/json" }
+    );
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = stories[index].title + ".json";
+    link.click();
+  }
+
+  function deleteStory(index) {
+    stories.splice(index, 1);
+    renderStories();
+  }
+
+  renderStories();
+</script>
+
+</body>
+</html>
