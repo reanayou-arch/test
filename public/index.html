@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Horror-Studio — Меню</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Horror-Studio</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: radial-gradient(circle at top, #3a2b2b, #000);
       color: white;
       text-align: center;
@@ -17,133 +17,81 @@
     h1 {
       margin-top: 60px;
       font-size: 60px;
-      font-weight: bold;
     }
 
-    .btn-main {
-      margin-top: 40px;
+    button {
       width: 85%;
-      max-width: 400px;
+      max-width: 420px;
       padding: 18px;
+      margin-top: 25px;
       font-size: 22px;
       border-radius: 18px;
       border: none;
       cursor: pointer;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.12);
       color: white;
     }
 
-    .story-box {
-      margin: 40px auto;
+    .story {
+      margin: 20px auto;
       width: 85%;
       max-width: 500px;
-      padding: 20px;
-      border-radius: 20px;
+      padding: 18px;
+      border-radius: 18px;
       background: rgba(255,255,255,0.08);
+      text-align: left;
     }
 
-    .story-title {
-      font-size: 26px;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-
-    .btn-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .btn-play {
-      flex: 1;
-      padding: 14px;
-      border-radius: 15px;
-      border: none;
-      cursor: pointer;
+    .play {
+      margin-top: 12px;
       background: darkred;
-      color: white;
-      font-size: 18px;
-    }
-
-    .btn-json {
-      flex: 1;
-      padding: 14px;
-      border-radius: 15px;
-      border: none;
-      cursor: pointer;
-      background: darkgreen;
-      color: white;
-      font-size: 18px;
-    }
-
-    .btn-del {
-      flex: 1;
-      padding: 14px;
-      border-radius: 15px;
-      border: none;
-      cursor: pointer;
-      background: #552222;
-      color: white;
-      font-size: 18px;
-    }
-
-    .version {
-      margin-top: 40px;
-      opacity: 0.5;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Horror-Studio<br>— Меню</h1>
+<h1>Horror-Studio</h1>
 
-  <!-- Добавить историю -->
-  <button class="btn-main" onclick="goAuthor()">
-    ➕ Добавить историю
-  </button>
+<button onclick="location.href='author.html'">
+  ➕ Добавить историю
+</button>
 
-  <!-- История -->
-  <div class="story-box">
-    <div class="story-title">📖 Старый дом</div>
-
-    <div class="btn-row">
-      <button class="btn-play" onclick="startGame()">
-        ▶ Играть
-      </button>
-
-      <button class="btn-json" onclick="downloadJSON()">
-        ⬇ JSON
-      </button>
-
-      <button class="btn-del" onclick="deleteStory()">
-        🗑
-      </button>
-    </div>
-  </div>
-
-  <div class="version">(Версия панели: V0.1.2)</div>
+<div id="storiesBox" style="margin-top:30px;"></div>
 
 <script>
-/* Переход в author.html */
-function goAuthor() {
-  window.location.href = "author.html";
+async function loadStories() {
+  const box = document.getElementById("storiesBox");
+  box.innerHTML = "Загрузка историй...";
+
+  const res = await fetch("/api/stories");
+  const stories = await res.json();
+
+  if (!stories.length) {
+    box.innerHTML = "<p>Историй пока нет.</p>";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  stories.forEach(file => {
+    const div = document.createElement("div");
+    div.className = "story";
+
+    div.innerHTML = `
+      <b>📖 ${file.replace(".json","")}</b><br>
+      <button class="play">▶ Играть</button>
+    `;
+
+    div.querySelector(".play").onclick = () => {
+      window.location.href = "play.html?story=" + file;
+    };
+
+    box.appendChild(div);
+  });
 }
 
-/* Играть → play.html */
-function startGame() {
-  window.location.href = "play.html?story=старый_дом.json";
-}
-
-/* Скачать JSON */
-function downloadJSON() {
-  alert("Скачивание будет позже (пока тест)");
-}
-
-/* Удалить */
-function deleteStory() {
-  alert("Удаление будет позже (пока тест)");
-}
+loadStories();
 </script>
 
 </body>
