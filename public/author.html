@@ -2,12 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Создание истории</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: radial-gradient(#222, #000);
       color: white;
       padding: 20px;
@@ -15,15 +16,18 @@
 
     h1 {
       text-align: center;
+      font-size: 36px;
+      margin-bottom: 25px;
     }
 
     input, textarea {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0;
+      border-radius: 12px;
       border: none;
       font-size: 16px;
+      box-sizing: border-box;
     }
 
     button {
@@ -46,7 +50,7 @@
 
 <body>
 
-<h1>Создание истории</h1>
+<h1>➕ Создание истории</h1>
 
 <input id="title" placeholder="Название истории">
 
@@ -61,26 +65,45 @@
 </button>
 
 <script>
-function saveStory() {
-  const story = {
-    title: document.getElementById("title").value.trim(),
-    description: document.getElementById("desc").value.trim(),
-    startScene: document.getElementById("start").value.trim()
-  };
+/* ===========================
+   ✅ Сохранение истории в localStorage
+=========================== */
 
-  if (!story.title) {
-    alert("Введите название!");
+function saveStory() {
+
+  const title = document.getElementById("title").value.trim();
+  const description = document.getElementById("desc").value.trim();
+  const startScene = document.getElementById("start").value.trim();
+
+  if (!title) {
+    alert("❌ Введите название истории!");
     return;
   }
 
-  let stories = JSON.parse(localStorage.getItem("horrorStories")) || [];
+  if (!startScene) {
+    alert("❌ Введите начальную сцену!");
+    return;
+  }
 
+  // Собираем историю
+  const story = {
+    title: title,
+    description: description,
+    startScene: startScene
+  };
+
+  // Загружаем список историй
+  let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
+
+  // Добавляем новую историю
   stories.push(story);
 
-  localStorage.setItem("horrorStories", JSON.stringify(stories));
+  // Сохраняем обратно
+  localStorage.setItem("storiesList", JSON.stringify(stories));
 
-  alert("✅ История сохранена в браузере!");
+  alert("✅ История сохранена!");
 
+  // Возвращаемся в меню
   location.href = "index.html";
 }
 </script>
