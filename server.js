@@ -7,14 +7,14 @@ app.use(express.json());
 app.use(express.static("public"));
 
 /* ===========================
-   Главная страница (меню)
+   Главная страница
 =========================== */
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });
 
 /* ===========================
-   Проверка ключей
+   DEBUG переменные
 =========================== */
 app.get("/debug", (req, res) => {
   res.json({
@@ -27,44 +27,43 @@ app.get("/debug", (req, res) => {
 });
 
 /* ===========================
-   Получить список историй из GitHub
+   GitHub helper headers
+=========================== */
+function githubHeaders() {
+  return {
+    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+    Accept: "application/vnd.github+json",
+    "User-Agent": "Horror-Studio-Render"
+  };
+}
+
+/* ===========================
+   Получить список историй
 =========================== */
 app.get("/api/stories", async (req, res) => {
   try {
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
     const folder = process.env.STORIES_PATH || "stories";
-    const token = process.env.GITHUB_TOKEN;
-
-    if (!repo) {
-      return res.status(500).json({ error: "❌ GITHUB_REPO не задан" });
-    }
-
-    if (!token) {
-      return res.status(500).json({ error: "❌ GITHUB_TOKEN отсутствует в Render" });
-    }
 
     const url = `https://api.github.com/repos/${repo}/contents/${folder}?ref=${branch}`;
 
     const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json"
-      }
+      headers: githubHeaders()
     });
 
     const data = await response.json();
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: `GitHub API ошибка`,
+        error: "GitHub API ошибка",
         status: response.status,
-        details: data
+        githubMessage: data.message,
+        urlUsed: url
       });
     }
 
-    const stories = data.filter(f => f.name.endsWith(".json"));
-    res.json(stories);
+    res.json(data.filter(f => f.name.endsWith(".json")));
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -72,24 +71,20 @@ app.get("/api/stories", async (req, res) => {
 });
 
 /* ===========================
-   Загрузить одну историю (для play.html)
+   Получить одну историю
 =========================== */
 app.get("/api/story/:name", async (req, res) => {
   try {
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
     const folder = process.env.STORIES_PATH || "stories";
-    const token = process.env.GITHUB_TOKEN;
 
     const fileName = req.params.name;
 
     const url = `https://api.github.com/repos/${repo}/contents/${folder}/${fileName}?ref=${branch}`;
 
     const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json"
-      }
+      headers: githubHeaders()
     });
 
     const data = await response.json();
@@ -97,12 +92,11 @@ app.get("/api/story/:name", async (req, res) => {
     if (!response.ok) {
       return res.status(response.status).json({
         error: "История не найдена",
-        details: data
+        githubMessage: data.message
       });
     }
 
-    // decode base64
-    const content = Buffer.from(data.content, "base64").toString("utf-8");
+    const content = Buffer.from(data.content, "base64").toString("utf8");
     res.json(JSON.parse(content));
 
   } catch (err) {
@@ -111,20 +105,15 @@ app.get("/api/story/:name", async (req, res) => {
 });
 
 /* ===========================
-   Сохранить историю в GitHub (author.html)
+   Сохранить историю
 =========================== */
 app.post("/api/save-story", async (req, res) => {
   try {
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
     const folder = process.env.STORIES_PATH || "stories";
-    const token = process.env.GITHUB_TOKEN;
 
     const story = req.body;
-
-    if (!story.title) {
-      return res.json({ success: false, error: "Нет названия" });
-    }
 
     const fileName = `${story.title}.json`;
 
@@ -139,8 +128,7 @@ app.post("/api/save-story", async (req, res) => {
     const response = await fetch(url, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
+        ...githubHeaders(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
@@ -151,8 +139,7 @@ app.post("/api/save-story", async (req, res) => {
     if (!response.ok) {
       return res.json({
         success: false,
-        error: "GitHub ошибка",
-        details: data
+        error: data.message
       });
     }
 
@@ -160,31 +147,6 @@ app.post("/api/save-story", async (req, res) => {
 
   } catch (err) {
     res.json({ success: false, error: err.message });
-  }
-});
-
-/* ===========================
-   Chat API (Groq)
-=========================== */
-app.post("/api/chat", async (req, res) => {
-  try {
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`
-        },
-        body: JSON.stringify(req.body)
-      }
-    );
-
-    const data = await response.json();
-    res.json(data);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 
