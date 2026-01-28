@@ -1,217 +1,100 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Horror-Studio — Создание истории</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Author Panel</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: url("https://i.ibb.co/5YqkF5X/dark-bg.jpg") no-repeat center center fixed;
-      background-size: cover;
+      font-family: Arial;
+      background: #111;
       color: white;
-    }
-
-    .overlay {
-      background: rgba(0,0,0,0.65);
-      min-height: 100vh;
-      padding: 30px 15px;
+      padding: 20px;
     }
 
     h1 {
       text-align: center;
-      font-size: 34px;
       margin-bottom: 30px;
-    }
-
-    .panel {
-      max-width: 700px;
-      margin: auto;
-      background: rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 25px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
-    }
-
-    label {
-      display: block;
-      margin-top: 20px;
-      font-size: 15px;
-      opacity: 0.9;
     }
 
     input, textarea {
       width: 100%;
-      margin-top: 6px;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 14px;
       border: none;
-      outline: none;
-      background: rgba(255,255,255,0.15);
+      font-size: 16px;
+      background: rgba(255,255,255,0.12);
       color: white;
-      font-size: 15px;
     }
 
     textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
-    .characters {
-      margin-top: 25px;
-    }
-
-    .char-card {
-      margin-top: 15px;
-      padding: 15px;
-      border-radius: 14px;
-      background: rgba(0,0,0,0.35);
-      display: flex;
-      gap: 15px;
-      align-items: flex-start;
-    }
-
-    .char-avatar {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      flex-shrink: 0;
-    }
-
-    .char-fields {
-      flex: 1;
+      height: 140px;
+      resize: none;
     }
 
     button {
       width: 100%;
-      margin-top: 25px;
-      padding: 14px;
-      border-radius: 14px;
+      margin-top: 20px;
+      padding: 16px;
+      font-size: 20px;
+      border-radius: 16px;
       border: none;
-      font-size: 16px;
       cursor: pointer;
-      background: rgba(180,40,60,0.85);
+      background: darkred;
       color: white;
-      transition: 0.2s;
-    }
-
-    button:hover {
-      background: rgba(220,60,80,0.95);
-    }
-
-    .small-btn {
-      margin-top: 10px;
-      background: rgba(70,130,180,0.75);
-    }
-
-    .small-btn:hover {
-      background: rgba(90,160,220,0.9);
     }
 
     .back {
-      margin-top: 15px;
-      background: rgba(255,255,255,0.15);
-    }
-
-    .back:hover {
-      background: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
     }
   </style>
 </head>
 
 <body>
-  <div class="overlay">
 
-    <h1>Создание новой хоррор-истории</h1>
+<h1>Создание истории</h1>
 
-    <div class="panel">
+<input id="title" placeholder="Название истории">
+<textarea id="desc" placeholder="Описание сюжета..."></textarea>
 
-      <label>Название:</label>
-      <input id="title" placeholder="Введите название истории..."/>
+<button onclick="saveStory()">💾 Сохранить в GitHub</button>
+<button class="back" onclick="location.href='/'">⬅ Назад</button>
 
-      <label>Описание для ИИ:</label>
-      <textarea id="aiDesc" placeholder="Опишите сюжет, атмосферу, ограничения и особенности..."></textarea>
+<script>
+async function saveStory() {
+  const title = document.getElementById("title").value.trim();
+  const desc = document.getElementById("desc").value.trim();
 
-      <label>Предыстория:</label>
-      <textarea id="past" placeholder="Что было до начала истории..."></textarea>
+  if (!title) {
+    alert("Введите название!");
+    return;
+  }
 
-      <label>Начальная сцена:</label>
-      <textarea id="start" placeholder="С чего начинается сюжет..."></textarea>
+  const story = {
+    title: title,
+    description: desc,
+    created: new Date().toISOString()
+  };
 
-      <div class="characters">
-        <h2>Персонажи:</h2>
+  const res = await fetch("/api/save-story", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(story)
+  });
 
-        <div id="charList"></div>
+  const result = await res.json();
 
-        <button class="small-btn" onclick="addCharacter()">➕ Добавить персонажа</button>
-      </div>
-
-      <button onclick="saveStory()">💾 Сохранить историю</button>
-
-      <button class="back" onclick="goBack()">⬅ Назад в меню</button>
-
-    </div>
-  </div>
-
-  <script>
-    let characters = [];
-
-    function addCharacter() {
-      const newChar = {
-        name: "",
-        role: "",
-        secret: ""
-      };
-      characters.push(newChar);
-      renderCharacters();
-    }
-
-    function renderCharacters() {
-      const container = document.getElementById("charList");
-      container.innerHTML = "";
-
-      characters.forEach((c, index) => {
-        container.innerHTML += `
-          <div class="char-card">
-            <div class="char-avatar"></div>
-            <div class="char-fields">
-              <input placeholder="Имя персонажа..."
-                value="${c.name}"
-                onchange="characters[${index}].name=this.value">
-
-              <input placeholder="Роль в сюжете..."
-                value="${c.role}"
-                onchange="characters[${index}].role=this.value">
-
-              <textarea placeholder="Характер и тайны..."
-                onchange="characters[${index}].secret=this.value">${c.secret}</textarea>
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    function saveStory() {
-      const story = {
-        title: document.getElementById("title").value,
-        aiDesc: document.getElementById("aiDesc").value,
-        past: document.getElementById("past").value,
-        start: document.getElementById("start").value,
-        characters: characters
-      };
-
-      localStorage.setItem("horror_story_temp", JSON.stringify(story));
-
-      alert("✅ История сохранена (пока временно в браузере)");
-    }
-
-    function goBack() {
-      window.location.href = "index.html";
-    }
-  </script>
+  if (result.success) {
+    alert("✅ История сохранена: " + result.file);
+    location.href = "/";
+  } else {
+    alert("❌ Ошибка:\n" + JSON.stringify(result, null, 2));
+  }
+}
+</script>
 
 </body>
 </html>
