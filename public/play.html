@@ -2,117 +2,234 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Horror — Игра</title>
+  <title>Horror-Studio — Игра</title>
 
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: #222;
+      background: radial-gradient(#111, #000);
       color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
     header {
-      background: #111;
       padding: 15px;
-      font-size: 20px;
       text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      background: rgba(255,255,255,0.05);
     }
 
     #chat {
-      padding: 20px;
-      height: 80vh;
+      flex: 1;
       overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .msg {
-      background: #333;
+      max-width: 75%;
       padding: 12px;
-      border-radius: 15px;
-      margin: 10px 0;
-      width: fit-content;
-      max-width: 80%;
+      border-radius: 16px;
+      font-size: 16px;
+      line-height: 1.3;
     }
 
-    .me {
+    .bot {
+      background: rgba(255,255,255,0.1);
+      align-self: flex-start;
+    }
+
+    .user {
       background: darkred;
-      margin-left: auto;
+      align-self: flex-end;
     }
 
     footer {
       display: flex;
       padding: 10px;
-      background: #111;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
     }
 
     input {
       flex: 1;
       padding: 12px;
-      border-radius: 15px;
+      border-radius: 14px;
       border: none;
       font-size: 16px;
     }
 
     button {
-      margin-left: 10px;
       padding: 12px 18px;
-      border-radius: 15px;
+      border-radius: 14px;
       border: none;
+      font-size: 16px;
+      cursor: pointer;
       background: darkred;
       color: white;
-      cursor: pointer;
+    }
+
+    .backBtn {
+      width: 100%;
+      background: #333;
+      margin-top: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<header id="storyTitle">История</header>
+<header id="title">Загрузка истории...</header>
 
 <div id="chat"></div>
 
 <footer>
-  <input id="input" placeholder="Введите сообщение...">
+  <input id="input" placeholder="Ваш ответ...">
   <button onclick="send()">➤</button>
 </footer>
 
+<button class="backBtn" onclick="location.href='index.html'">
+  ← Назад в меню
+</button>
+
 <script>
-const chat = document.getElementById("chat");
-const params = new URLSearchParams(location.search);
-const index = params.get("story");
+/* ===============================
+   1) Получаем story из URL
+================================ */
+const params = new URLSearchParams(window.location.search);
+let storyIndex = params.get("story");
 
-let stories = JSON.parse(localStorage.getItem("horrorStories")) || [];
-
-if (!stories[index]) {
-  alert("История не найдена!");
+/* ===============================
+   2) Проверка параметра
+================================ */
+if (storyIndex === null || storyIndex === "") {
+  alert("❌ Ошибка: история не выбрана.\nВернитесь в меню и нажмите Играть.");
   location.href = "index.html";
 }
 
-const story = stories[index];
-document.getElementById("storyTitle").innerText = story.title;
+/* ===============================
+   3) Приводим индекс к числу
+================================ */
+storyIndex = Number(storyIndex);
 
-addMessage("Начало истории:", false);
-addMessage(story.startScene || "История начинается...", false);
+/* ===============================
+   4) Загружаем истории из localStorage
+================================ */
+let stories = JSON.parse(localStorage.getItem("stories") || "[]");
 
-function addMessage(text, me) {
+/* ===============================
+   5) Проверка наличия историй
+================================ */
+if (!Array.isArray(stories) || stories.length === 0) {
+  alert("❌ В браузере нет сохранённых историй.\nСоздай историю через 'Добавить историю'.");
+  location.href = "index.html";
+}
+
+/* ===============================
+   6) Проверка выбранной истории
+================================ */
+if (!stories[storyIndex]) {
+  alert(
+    "❌ История не найдена.\n\n" +
+    "Причины:\n" +
+    "• localStorage очищен\n" +
+    "• история создана в другом браузере\n" +
+    "• индекс неправильный\n\n" +
+    "Вернитесь в меню."
+  );
+  location.href = "index.html";
+}
+
+/* ===============================
+   7) Загружаем выбранную историю
+================================ */
+const story = stories[storyIndex];
+
+document.getElementById("title").innerText = "📖 " + story.title;
+
+const chat = document.getElementById("chat");
+
+/* ===============================
+   8) Показ стартовой сцены
+================================ */
+addBot(story.startScene || "История начинается...");
+
+/* ===============================
+   Сообщения в чат
+================================ */
+function addBot(text) {
   const div = document.createElement("div");
-  div.className = "msg" + (me ? " me" : "");
+  div.className = "msg bot";
   div.innerText = text;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
 
-function send() {
+function addUser(text) {
+  const div = document.createElement("div");
+  div.className = "msg user";
+  div.innerText = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+/* ===============================
+   9) Отправка сообщения игрока
+================================ */
+async function send() {
   const input = document.getElementById("input");
   const text = input.value.trim();
   if (!text) return;
 
-  addMessage(text, true);
+  addUser(text);
   input.value = "";
 
-  setTimeout(() => {
-    addMessage("👁 Продолжение будет позже...", false);
-  }, 800);
+  addBot("...");
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "system",
+            content: "Ты хоррор-рассказчик. Продолжай историю игрока."
+          },
+          {
+            role: "user",
+            content: story.description + "\n\nНачало:\n" + story.startScene
+          },
+          {
+            role: "user",
+            content: text
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+
+    chat.lastChild.remove();
+
+    if (data.error) {
+      addBot("❌ Ошибка: " + data.error);
+      return;
+    }
+
+    addBot(data.choices[0].message.content);
+
+  } catch (e) {
+    chat.lastChild.remove();
+    addBot("❌ Ошибка соединения.");
+  }
 }
 </script>
 
