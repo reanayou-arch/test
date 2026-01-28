@@ -2,93 +2,107 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Horror-Studio</title>
-
+  <title>Horror-Studio — Меню</title>
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: radial-gradient(circle at top, #3a2b2b, #000);
+      background: radial-gradient(#3a2a2a, #000);
       color: white;
       text-align: center;
     }
 
     h1 {
-      margin-top: 60px;
-      font-size: 60px;
+      margin-top: 50px;
+      font-size: 48px;
     }
 
     button {
-      width: 85%;
-      max-width: 420px;
-      padding: 18px;
-      margin-top: 25px;
-      font-size: 22px;
-      border-radius: 18px;
+      padding: 18px 30px;
+      border-radius: 20px;
       border: none;
+      font-size: 20px;
       cursor: pointer;
-      background: rgba(255,255,255,0.12);
-      color: white;
+      margin: 15px;
     }
 
-    .story {
-      margin: 20px auto;
+    .add {
+      background: #444;
+      color: white;
+      width: 80%;
+      max-width: 400px;
+    }
+
+    .storyBox {
+      margin: 30px auto;
       width: 85%;
       max-width: 500px;
-      padding: 18px;
-      border-radius: 18px;
       background: rgba(255,255,255,0.08);
-      text-align: left;
+      padding: 20px;
+      border-radius: 20px;
     }
 
-    .play {
-      margin-top: 12px;
+    .storyBtn {
       background: darkred;
+      color: white;
+      width: 150px;
     }
   </style>
 </head>
-
 <body>
 
 <h1>Horror-Studio</h1>
 
-<button onclick="location.href='author.html'">
+<button class="add" onclick="location.href='author.html'">
   ➕ Добавить историю
 </button>
 
-<div id="storiesBox" style="margin-top:30px;"></div>
+<h2>Список историй:</h2>
+
+<div id="stories"></div>
 
 <script>
 async function loadStories() {
-  const box = document.getElementById("storiesBox");
-  box.innerHTML = "Загрузка историй...";
+  const box = document.getElementById("stories");
+  box.innerHTML = "Загрузка...";
 
-  const res = await fetch("/api/stories");
-  const stories = await res.json();
+  try {
+    const res = await fetch("/api/stories");
+    const data = await res.json();
 
-  if (!stories.length) {
-    box.innerHTML = "<p>Историй пока нет.</p>";
-    return;
+    if (data.error) {
+      box.innerHTML = "❌ Ошибка: " + data.error;
+      return;
+    }
+
+    if (data.length === 0) {
+      box.innerHTML = "Историй пока нет.";
+      return;
+    }
+
+    box.innerHTML = "";
+
+    data.forEach(story => {
+      const div = document.createElement("div");
+      div.className = "storyBox";
+
+      div.innerHTML = `
+        <h3>📖 ${story.name.replace(".json","")}</h3>
+        <button class="storyBtn" onclick="playStory('${story.name}')">
+          ▶ Играть
+        </button>
+      `;
+
+      box.appendChild(div);
+    });
+
+  } catch (e) {
+    box.innerHTML = "Ошибка загрузки историй.";
   }
+}
 
-  box.innerHTML = "";
-
-  stories.forEach(file => {
-    const div = document.createElement("div");
-    div.className = "story";
-
-    div.innerHTML = `
-      <b>📖 ${file.replace(".json","")}</b><br>
-      <button class="play">▶ Играть</button>
-    `;
-
-    div.querySelector(".play").onclick = () => {
-      window.location.href = "play.html?story=" + file;
-    };
-
-    box.appendChild(div);
-  });
+function playStory(file) {
+  location.href = "play.html?story=" + file;
 }
 
 loadStories();
