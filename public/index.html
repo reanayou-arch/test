@@ -1,58 +1,78 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
   <title>Horror-Studio — Меню</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: radial-gradient(#3a2a2a, #000);
       color: white;
       text-align: center;
+      min-height: 100vh;
     }
 
     h1 {
       margin-top: 50px;
-      font-size: 48px;
+      font-size: 46px;
+      font-weight: bold;
     }
 
-    button {
-      padding: 18px 30px;
-      border-radius: 20px;
-      border: none;
+    .btn {
+      width: 85%;
+      max-width: 420px;
+      padding: 18px;
+      margin: 20px auto;
       font-size: 20px;
+      border: none;
+      border-radius: 22px;
       cursor: pointer;
-      margin: 15px;
+      display: block;
     }
 
-    .add {
+    .addBtn {
       background: #444;
       color: white;
-      width: 80%;
-      max-width: 400px;
+    }
+
+    .storyListTitle {
+      margin-top: 35px;
+      font-size: 24px;
+      font-weight: bold;
     }
 
     .storyBox {
-      margin: 25px auto;
+      margin: 20px auto;
       width: 85%;
-      max-width: 500px;
+      max-width: 450px;
       background: rgba(255,255,255,0.08);
-      padding: 20px;
+      padding: 18px;
       border-radius: 20px;
+      text-align: left;
     }
 
-    .storyBtn {
+    .storyBox h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .playBtn {
       background: darkred;
       color: white;
-      width: 160px;
-      margin-top: 10px;
+      padding: 12px 18px;
+      border-radius: 15px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
     }
 
     .empty {
+      margin-top: 25px;
       opacity: 0.7;
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -61,19 +81,33 @@
 
 <h1>Horror-Studio</h1>
 
-<button class="add" onclick="location.href='author.html'">
+<!-- Кнопка добавить -->
+<button class="btn addBtn" onclick="location.href='author.html'">
   ➕ Добавить историю
 </button>
 
-<h2>Список историй:</h2>
+<div class="storyListTitle">Список историй:</div>
 
+<!-- Контейнер -->
 <div id="stories"></div>
 
 <script>
+/* ============================
+   Истории из localStorage
+============================ */
+
 function loadStories() {
   const box = document.getElementById("stories");
 
-  let stories = JSON.parse(localStorage.getItem("horrorStories")) || [];
+  // берём список
+  const saved = localStorage.getItem("storiesList");
+
+  if (!saved) {
+    box.innerHTML = `<p class="empty">Историй пока нет.</p>`;
+    return;
+  }
+
+  const stories = JSON.parse(saved);
 
   if (stories.length === 0) {
     box.innerHTML = `<p class="empty">Историй пока нет.</p>`;
@@ -88,7 +122,7 @@ function loadStories() {
 
     div.innerHTML = `
       <h3>📖 ${story.title}</h3>
-      <button class="storyBtn" onclick="playStory(${index})">
+      <button class="playBtn" onclick="playStory(${index})">
         ▶ Играть
       </button>
     `;
@@ -97,10 +131,24 @@ function loadStories() {
   });
 }
 
+/* ============================
+   Запуск истории
+============================ */
+
 function playStory(index) {
-  location.href = "play.html?story=" + index;
+  const saved = JSON.parse(localStorage.getItem("storiesList"));
+
+  // выбранная история
+  const story = saved[index];
+
+  // сохранить текущую
+  localStorage.setItem("currentStory", JSON.stringify(story));
+
+  // перейти в игру
+  location.href = "play.html";
 }
 
+/* Загрузка при старте */
 loadStories();
 </script>
 
