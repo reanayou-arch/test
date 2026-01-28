@@ -36,6 +36,14 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// ✅ Тест ключа (временно)
+app.get("/testkey", (req, res) => {
+  if (!process.env.GROQ_API_KEY) {
+    return res.send("❌ GROQ_API_KEY НЕ найден");
+  }
+  res.send("✅ GROQ_API_KEY подключён");
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Horror-Studio работает на порту", PORT);
