@@ -10,19 +10,20 @@
     body {
       margin: 0;
       font-family: "Segoe UI", sans-serif;
-      background: url("https://i.ibb.co/7vDLJFb/darkforest.jpg") center/cover no-repeat fixed;
+      background: radial-gradient(circle at top, #2a1d1d, #111);
       color: white;
     }
 
     .overlay {
       min-height: 100vh;
-      background: rgba(0,0,0,0.65);
       padding: 25px 15px;
+      max-width: 430px;
+      margin: auto;
     }
 
     h1 {
       text-align: center;
-      font-size: 26px;
+      font-size: 24px;
       margin-bottom: 25px;
     }
 
@@ -31,7 +32,6 @@
       border-radius: 18px;
       padding: 18px;
       margin-bottom: 20px;
-      backdrop-filter: blur(8px);
     }
 
     label {
@@ -65,17 +65,16 @@
       margin-top: 15px;
       display: flex;
       gap: 14px;
-      align-items: flex-start;
       position: relative;
     }
 
     .avatar {
-      width: 75px;
-      height: 75px;
-      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      border-radius: 14px;
       overflow: hidden;
-      flex-shrink: 0;
       background: rgba(255,255,255,0.15);
+      flex-shrink: 0;
     }
 
     .avatar img {
@@ -90,12 +89,11 @@
 
     .remove-btn {
       position: absolute;
-      top: 12px;
-      right: 14px;
+      top: 10px;
+      right: 12px;
       background: none;
       border: none;
       color: #ff6666;
-      font-size: 13px;
       cursor: pointer;
     }
 
@@ -142,36 +140,27 @@
 
     <h1>Создание новой хоррор-истории</h1>
 
-    <!-- Основная информация -->
     <div class="block">
-      <h3>Основная информация:</h3>
-
       <label>Название:</label>
       <input id="title" placeholder="Введите название истории...">
 
       <label>Описание для ИИ:</label>
-      <textarea id="description" placeholder="Опишите сюжет, атмосферу, ограничения и особенности для ИИ..."></textarea>
+      <textarea id="description"></textarea>
     </div>
 
-    <!-- Предыстория -->
     <div class="block">
-      <h3>Предыстория:</h3>
-
       <label>Прошлое:</label>
-      <textarea id="past" placeholder="Предыстория до начала истории..."></textarea>
+      <textarea id="past"></textarea>
 
-      <label>Текущая ситуация в начале сюжета:</label>
-      <textarea id="startSituation" placeholder="Начальная сцена и ситуация для игрока..."></textarea>
+      <label>Начальная ситуация:</label>
+      <textarea id="startSituation"></textarea>
     </div>
 
-    <!-- Персонажи -->
     <div class="block">
       <h3>Персонажи:</h3>
-
       <div id="characters"></div>
 
       <button class="add-btn" onclick="addCharacter()">➕ Добавить персонажа</button>
-
       <button class="save-btn" onclick="saveStory()">💾 Сохранить историю</button>
     </div>
 
@@ -182,16 +171,13 @@
 
   function addCharacter() {
     const id = Date.now();
-
-    const character = {
+    characters.push({
       id,
       name: "",
       role: "",
       personality: "",
       avatar: ""
-    };
-
-    characters.push(character);
+    });
     renderCharacters();
   }
 
@@ -199,14 +185,12 @@
     const container = document.getElementById("characters");
     container.innerHTML = "";
 
-    characters.forEach((ch) => {
+    characters.forEach(ch => {
       const card = document.createElement("div");
       card.className = "character-card";
 
       card.innerHTML = `
-        <button class="remove-btn" onclick="removeCharacter(${ch.id})">
-          Удалить персонажа
-        </button>
+        <button class="remove-btn" onclick="removeCharacter(${ch.id})">Удалить</button>
 
         <div class="avatar">
           ${ch.avatar ? `<img src="${ch.avatar}">` : ""}
@@ -214,16 +198,13 @@
 
         <div class="char-fields">
           <label>Имя:</label>
-          <input value="${ch.name}" 
-            oninput="updateField(${ch.id}, 'name', this.value)">
+          <input value="${ch.name}" oninput="updateField(${ch.id}, 'name', this.value)">
 
-          <label>Роль в сюжете:</label>
-          <input value="${ch.role}"
-            oninput="updateField(${ch.id}, 'role', this.value)">
+          <label>Роль:</label>
+          <input value="${ch.role}" oninput="updateField(${ch.id}, 'role', this.value)">
 
-          <label>Характер и тайны:</label>
-          <textarea oninput="updateField(${ch.id}, 'personality', this.value)">
-${ch.personality}</textarea>
+          <label>Характер:</label>
+          <textarea oninput="updateField(${ch.id}, 'personality', this.value)">${ch.personality}</textarea>
 
           <input type="file" accept="image/*" style="display:none"
             id="file_${ch.id}" onchange="uploadAvatar(event, ${ch.id})">
@@ -253,35 +234,34 @@ ${ch.personality}</textarea>
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = e => {
       const ch = characters.find(c => c.id === id);
       ch.avatar = e.target.result;
       renderCharacters();
     };
-
     reader.readAsDataURL(file);
   }
 
   function saveStory() {
     const story = {
+      id: Date.now(),
       title: document.getElementById("title").value,
       description: document.getElementById("description").value,
       setup: {
         past: document.getElementById("past").value,
         startSituation: document.getElementById("startSituation").value
       },
-      characters: characters
+      characters
     };
 
-    const blob = new Blob([JSON.stringify(story, null, 2)], { type: "application/json" });
+    let list = JSON.parse(localStorage.getItem("horrorStories") || "[]");
+    list.push(story);
+    localStorage.setItem("horrorStories", JSON.stringify(list));
 
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = story.title ? story.title + ".json" : "story.json";
-    link.click();
+    alert("История сохранена!");
+    location.href = "/";
   }
 
-  // старт: сразу 1 персонаж
   addCharacter();
 </script>
 
