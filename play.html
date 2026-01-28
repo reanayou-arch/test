@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Horror-Studio — Игра с ИИ</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #111;
+      color: white;
+    }
+
+    .chat {
+      height: 85vh;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      padding: 10px 14px;
+      border-radius: 16px;
+      max-width: 80%;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .npc {
+      background: rgba(255,255,255,0.10);
+      align-self: flex-start;
+    }
+
+    .player {
+      background: rgba(0,120,255,0.55);
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      gap: 10px;
+      background: rgba(0,0,0,0.7);
+    }
+
+    .input-area input {
+      flex: 1;
+      border: none;
+      border-radius: 14px;
+      padding: 12px;
+      outline: none;
+      font-size: 14px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    .input-area button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      cursor: pointer;
+      background: darkred;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="input-area">
+    <input id="playerInput" placeholder="Введите сообщение..." />
+    <button onclick="sendMessage()">➤</button>
+  </div>
+
+  <script>
+    // ===============================
+    // 🔑 ВСТАВЬ СЮДА СВОЙ GROQ KEY
+    // ===============================
+    const GROQ_API_KEY = "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";
+
+    const chatEl = document.getElementById("chat");
+
+    let history = [
+      {
+        role: "system",
+        content: "Ты — хоррор-чат персонаж. Общайся атмосферно, короткими репликами, как в Telegram."
+      }
+    ];
+
+    function addMessage(text, type) {
+      const div = document.createElement("div");
+      div.className = "msg " + type;
+      div.innerText = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("playerInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, "player");
+      input.value = "";
+
+      history.push({ role: "user", content: text });
+
+      addMessage("...", "npc");
+
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + GROQ_API_KEY
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: history,
+          temperature: 0.8
+        })
+      });
+
+      const data = await response.json();
+
+      // Удаляем "..."
+      chatEl.lastChild.remove();
+
+      const reply = data.choices[0].message.content;
+
+      history.push({ role: "assistant", content: reply });
+
+      addMessage(reply, "npc");
+    }
+  </script>
+
+</body>
+</html>
