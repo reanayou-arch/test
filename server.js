@@ -7,8 +7,18 @@ app.use(express.json());
 app.use(express.static("public"));
 
 /* ============================
+   ✅ ENV переменные
+============================ */
+
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
+const STORIES_PATH = process.env.STORIES_PATH || "stories";
+
+/* ============================
    ✅ Главная страница (Меню)
 ============================ */
+
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });
@@ -16,6 +26,7 @@ app.get("/", (req, res) => {
 /* ============================
    ✅ Проверка GROQ ключа
 ============================ */
+
 app.get("/testkey", (req, res) => {
   if (!process.env.GROQ_API_KEY) {
     return res.send("❌ GROQ_API_KEY НЕ найден");
@@ -26,6 +37,7 @@ app.get("/testkey", (req, res) => {
 /* ============================
    ✅ Groq Chat API
 ============================ */
+
 app.post("/api/chat", async (req, res) => {
   try {
     const response = await fetch(
@@ -48,13 +60,53 @@ app.post("/api/chat", async (req, res) => {
 });
 
 /* ============================
-   ✅ GitHub Stories API
+   ✅ Автосоздание папки stories/
 ============================ */
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
-const STORIES_PATH = process.env.STORIES_PATH || "stories";
+async function ensureStoriesFolder() {
+  try {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}?ref=${GITHUB_BRANCH}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+
+    /* ✅ Если папки нет → создаём */
+    if (response.status === 404) {
+      console.log("⚠ Папка stories не найдена → создаю...");
+
+      const createUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/.keep`;
+
+      const encoded = Buffer.from("folder created").toString("base64");
+
+      await fetch(createUrl, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Accept: "application/vnd.github+json",
+        },
+        body: JSON.stringify({
+          message: "Создана папка stories/",
+          content: encoded,
+          branch: GITHUB_BRANCH,
+        }),
+      });
+
+      console.log("✅ stories/ создана автоматически!");
+    } else {
+      console.log("✅ stories/ уже существует");
+    }
+  } catch (err) {
+    console.log("❌ Ошибка автосоздания stories:", err.message);
+  }
+}
+
+/* ============================
+   ✅ GitHub Stories API
+============================ */
 
 /* ---------- GET список историй ---------- */
 app.get("/api/stories", async (req, res) => {
@@ -121,37 +173,15 @@ app.post("/api/saveStory", async (req, res) => {
   }
 });
 
-/* ---------- DELETE удалить историю ---------- */
-app.delete("/api/deleteStory", async (req, res) => {
-  try {
-    const { filename, sha } = req.body;
-
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/${filename}.json`;
-
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github+json",
-      },
-      body: JSON.stringify({
-        message: `Удалена история: ${filename}`,
-        sha,
-        branch: GITHUB_BRANCH,
-      }),
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 /* ============================
-   ✅ Render порт
+   ✅ Render запуск
 ============================ */
+
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log("Horror-Studio работает на порту", PORT);
+
+app.listen(PORT, async () => {
+  console.log("🚀 Horror-Studio работает на порту", PORT);
+
+  /* ✅ Автопроверка stories при старте */
+  await ensureStoriesFolder();
 });
