@@ -1,338 +1,119 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Horror-Studio — Игра</title>
+  <meta charset="UTF-8">
+  <title>Horror — Игра</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #666;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ===== TOP BAR ===== */
-    .topbar {
-      background: #1f1f1f;
+      font-family: Arial;
+      background: #222;
       color: white;
-      padding: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
-    .back-btn {
-      font-size: 22px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .chat-avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #444;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .chat-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .chat-info {
-      flex: 1;
-    }
-
-    .chat-title {
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .chat-subtitle {
-      font-size: 13px;
-      opacity: 0.7;
-    }
-
-    .top-icons {
-      display: flex;
-      gap: 14px;
-      font-size: 20px;
-      opacity: 0.8;
-    }
-
-    /* ===== CHAT AREA ===== */
-    .chat-area {
-      flex: 1;
-      overflow-y: auto;
+    header {
+      background: #111;
       padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+      font-size: 20px;
+      text-align: center;
     }
 
-    /* ===== SYSTEM MESSAGE ===== */
-    .system {
-      align-self: center;
-      background: rgba(255,255,255,0.15);
-      padding: 8px 14px;
-      border-radius: 18px;
-      font-size: 14px;
-      color: #eee;
-      text-align: center;
+    #chat {
+      padding: 20px;
+      height: 80vh;
+      overflow-y: auto;
+    }
+
+    .msg {
+      background: #333;
+      padding: 12px;
+      border-radius: 15px;
+      margin: 10px 0;
+      width: fit-content;
       max-width: 80%;
     }
 
-    /* ===== LEFT MESSAGE ===== */
-    .msg-left {
+    .me {
+      background: darkred;
+      margin-left: auto;
+    }
+
+    footer {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .msg-left .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #333;
-      overflow: hidden;
-    }
-
-    .msg-left .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .msg-left .bubble-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .msg-left .name {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-left: 4px;
-    }
-
-    .msg-left .bubble {
-      background: #2f2f2f;
-      padding: 12px 14px;
-      border-radius: 16px;
-      color: white;
-      max-width: 70vw;
-    }
-
-    /* ===== RIGHT MESSAGE ===== */
-    .msg-right {
-      align-self: flex-end;
-      background: #1877ff;
-      padding: 12px 14px;
-      border-radius: 16px;
-      color: white;
-      max-width: 70vw;
-    }
-
-    /* ===== INPUT BAR ===== */
-    .input-bar {
-      background: #1f1f1f;
       padding: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      background: #111;
     }
 
-    .icon-btn {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .text-input {
+    input {
       flex: 1;
-      height: 42px;
-      border-radius: 20px;
+      padding: 12px;
+      border-radius: 15px;
       border: none;
-      padding: 0 15px;
-      font-size: 15px;
-      outline: none;
+      font-size: 16px;
     }
 
-    .mic-btn {
+    button {
+      margin-left: 10px;
+      padding: 12px 18px;
+      border-radius: 15px;
+      border: none;
       background: darkred;
       color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="back-btn" onclick="goMenu()">←</div>
+<header id="storyTitle">История</header>
 
-    <div class="chat-avatar" id="storyAvatar">
-      <img src="https://i.imgur.com/4AiXzf8.jpeg" alt="">
-    </div>
+<div id="chat"></div>
 
-    <div class="chat-info">
-      <div class="chat-title" id="storyTitle">История</div>
-      <div class="chat-subtitle">приватный чат</div>
-    </div>
-
-    <div class="top-icons">
-      🔒 ⋮
-    </div>
-  </div>
-
-  <!-- CHAT -->
-  <div class="chat-area" id="chat"></div>
-
-  <!-- INPUT -->
-  <div class="input-bar">
-    <div class="icon-btn">＋</div>
-    <div class="icon-btn">😊</div>
-
-    <input id="userInput" class="text-input" placeholder="Напишите сообщение..."/>
-
-    <div class="icon-btn mic-btn" onclick="sendMessage()">➤</div>
-  </div>
+<footer>
+  <input id="input" placeholder="Введите сообщение...">
+  <button onclick="send()">➤</button>
+</footer>
 
 <script>
-/* ===== NAV ===== */
-function goMenu() {
-  window.location.href = "/";
-}
-
-/* ===== LOAD STORY ===== */
-let stories = JSON.parse(localStorage.getItem("stories") || "[]");
-let activeIndex = localStorage.getItem("activeStory");
-
-let story = stories[activeIndex];
-
-if (!story) {
-  alert("История не выбрана!");
-  goMenu();
-}
-
-document.getElementById("storyTitle").textContent = story.title || "История";
-
-/* ===== CHAT UI ===== */
 const chat = document.getElementById("chat");
+const params = new URLSearchParams(location.search);
+const index = params.get("story");
 
-function addSystem(text) {
+let stories = JSON.parse(localStorage.getItem("horrorStories")) || [];
+
+if (!stories[index]) {
+  alert("История не найдена!");
+  location.href = "index.html";
+}
+
+const story = stories[index];
+document.getElementById("storyTitle").innerText = story.title;
+
+addMessage("Начало истории:", false);
+addMessage(story.startScene || "История начинается...", false);
+
+function addMessage(text, me) {
   const div = document.createElement("div");
-  div.className = "system";
-  div.textContent = text;
+  div.className = "msg" + (me ? " me" : "");
+  div.innerText = text;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
 }
 
-function addLeft(name, avatar, text) {
-  const row = document.createElement("div");
-  row.className = "msg-left";
-
-  row.innerHTML = `
-    <div class="avatar">
-      <img src="${avatar}" alt="">
-    </div>
-    <div class="bubble-wrap">
-      <div class="name">${name}</div>
-      <div class="bubble">${text}</div>
-    </div>
-  `;
-
-  chat.appendChild(row);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function addRight(text) {
-  const div = document.createElement("div");
-  div.className = "msg-right";
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-/* ===== START STORY ===== */
-addSystem("Начало истории:");
-addSystem(story.startScene || "История начинается...");
-
-/* ===== FIRST NPC MESSAGE ===== */
-if (story.characters && story.characters.length > 0) {
-  let c = story.characters[0];
-  addLeft(c.name, c.avatar || "https://i.imgur.com/4AiXzf8.jpeg",
-    "Привет... история начинается."
-  );
-}
-
-/* ===== SEND MESSAGE ===== */
-async function sendMessage() {
-  const input = document.getElementById("userInput");
+function send() {
+  const input = document.getElementById("input");
   const text = input.value.trim();
   if (!text) return;
 
-  addRight(text);
+  addMessage(text, true);
   input.value = "";
 
-  /* SYSTEM PROMPT */
-  let systemPrompt = `
-Ты — интерактивная хоррор-история в стиле Telegram-чата.
-
-Название: ${story.title}
-Описание: ${story.description}
-
-Начальная сцена: ${story.startScene}
-
-Персонажи:
-${(story.characters||[]).map(c => `- ${c.name}: ${c.role}, характер: ${c.personality}`).join("\n")}
-
-Отвечай всегда как персонажи истории.
-`;
-
-  /* запрос к Groq */
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: text }
-      ]
-    })
-  });
-
-  const data = await response.json();
-
-  let reply =
-    data.choices?.[0]?.message?.content ||
-    "…";
-
-  /* NPC отвечает */
-  addLeft("ИИ", "https://i.imgur.com/4AiXzf8.jpeg", reply);
+  setTimeout(() => {
+    addMessage("👁 Продолжение будет позже...", false);
+  }, 800);
 }
-
-/* ENTER SEND */
-document.getElementById("userInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendMessage();
-});
 </script>
 
 </body>
