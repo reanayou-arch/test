@@ -2,96 +2,84 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Author Panel</title>
-
+  <title>Создание истории</title>
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      background: #111;
+      background: radial-gradient(#222, #000);
       color: white;
       padding: 20px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
     }
 
     input, textarea {
       width: 100%;
-      padding: 14px;
-      margin-top: 12px;
-      border-radius: 14px;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 10px;
       border: none;
       font-size: 16px;
-      background: rgba(255,255,255,0.12);
-      color: white;
-    }
-
-    textarea {
-      height: 140px;
-      resize: none;
     }
 
     button {
       width: 100%;
-      margin-top: 20px;
       padding: 16px;
-      font-size: 20px;
-      border-radius: 16px;
+      border-radius: 15px;
       border: none;
+      font-size: 18px;
       cursor: pointer;
+      margin-top: 15px;
       background: darkred;
       color: white;
     }
-
-    .back {
-      background: rgba(255,255,255,0.12);
-    }
   </style>
 </head>
-
 <body>
 
 <h1>Создание истории</h1>
 
 <input id="title" placeholder="Название истории">
-<textarea id="desc" placeholder="Описание сюжета..."></textarea>
 
-<button onclick="saveStory()">💾 Сохранить в GitHub</button>
-<button class="back" onclick="location.href='/'">⬅ Назад</button>
+<textarea id="desc" rows="5" placeholder="Описание сюжета для ИИ"></textarea>
+
+<textarea id="start" rows="4" placeholder="Начальная сцена"></textarea>
+
+<button onclick="saveStory()">💾 Сохранить историю</button>
+
+<button onclick="location.href='index.html'" style="background:#333;">
+  ← Назад в меню
+</button>
 
 <script>
 async function saveStory() {
-  const title = document.getElementById("title").value.trim();
-  const desc = document.getElementById("desc").value.trim();
+  const story = {
+    title: document.getElementById("title").value,
+    description: document.getElementById("desc").value,
+    startScene: document.getElementById("start").value
+  };
 
-  if (!title) {
+  if (!story.title) {
     alert("Введите название!");
     return;
   }
 
-  const story = {
-    title: title,
-    description: desc,
-    created: new Date().toISOString()
-  };
-
   const res = await fetch("/api/save-story", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify(story)
   });
 
-  const result = await res.json();
+  const data = await res.json();
 
-  if (result.success) {
-    alert("✅ История сохранена: " + result.file);
-    location.href = "/";
+  if (data.success) {
+    alert("✅ История сохранена в GitHub!");
+    location.href = "index.html";
   } else {
-    alert("❌ Ошибка:\n" + JSON.stringify(result, null, 2));
+    alert("❌ Ошибка: " + data.error);
   }
 }
 </script>
