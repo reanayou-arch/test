@@ -3,134 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-  <title>Horror-Studio — Панель автора</title>
+  <title>Horror-Studio — Создание истории</title>
 
   <style>
     body {
       margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #2a1d1d, #111);
+      font-family: Arial, sans-serif;
+      background: url("https://i.ibb.co/5YqkF5X/dark-bg.jpg") no-repeat center center fixed;
+      background-size: cover;
       color: white;
     }
 
     .overlay {
+      background: rgba(0,0,0,0.65);
       min-height: 100vh;
-      padding: 25px 15px;
-      max-width: 430px;
-      margin: auto;
+      padding: 30px 15px;
     }
 
     h1 {
       text-align: center;
-      font-size: 24px;
-      margin-bottom: 25px;
+      font-size: 34px;
+      margin-bottom: 30px;
     }
 
-    .block {
+    .panel {
+      max-width: 700px;
+      margin: auto;
       background: rgba(255,255,255,0.08);
       border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 20px;
+      padding: 25px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
     }
 
     label {
-      font-size: 14px;
-      opacity: 0.85;
       display: block;
-      margin-top: 12px;
-      margin-bottom: 6px;
+      margin-top: 20px;
+      font-size: 15px;
+      opacity: 0.9;
     }
 
     input, textarea {
       width: 100%;
-      border: none;
-      border-radius: 12px;
+      margin-top: 6px;
       padding: 12px;
-      font-size: 14px;
+      border-radius: 12px;
+      border: none;
       outline: none;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.15);
       color: white;
-      resize: none;
+      font-size: 15px;
     }
 
     textarea {
       min-height: 90px;
+      resize: vertical;
     }
 
-    .character-card {
-      background: rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 14px;
+    .characters {
+      margin-top: 25px;
+    }
+
+    .char-card {
       margin-top: 15px;
+      padding: 15px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.35);
       display: flex;
-      gap: 14px;
-      position: relative;
+      gap: 15px;
+      align-items: flex-start;
     }
 
-    .avatar {
+    .char-avatar {
       width: 70px;
       height: 70px;
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
       flex-shrink: 0;
-    }
-
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
     }
 
     .char-fields {
       flex: 1;
     }
 
-    .remove-btn {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      background: none;
-      border: none;
-      color: #ff6666;
-      cursor: pointer;
-    }
-
-    .photo-btn {
-      margin-top: 8px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      background: rgba(255,255,255,0.12);
-      color: white;
-      font-size: 13px;
-    }
-
-    .add-btn {
+    button {
       width: 100%;
-      padding: 12px;
-      border-radius: 14px;
-      border: none;
-      background: rgba(255,255,255,0.10);
-      color: white;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    .save-btn {
-      width: 100%;
+      margin-top: 25px;
       padding: 14px;
       border-radius: 14px;
       border: none;
-      background: darkred;
-      color: white;
-      font-size: 15px;
-      font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
+      background: rgba(180,40,60,0.85);
+      color: white;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: rgba(220,60,80,0.95);
+    }
+
+    .small-btn {
+      margin-top: 10px;
+      background: rgba(70,130,180,0.75);
+    }
+
+    .small-btn:hover {
+      background: rgba(90,160,220,0.9);
+    }
+
+    .back {
       margin-top: 15px;
+      background: rgba(255,255,255,0.15);
+    }
+
+    .back:hover {
+      background: rgba(255,255,255,0.25);
     }
   </style>
 </head>
@@ -140,130 +127,91 @@
 
     <h1>Создание новой хоррор-истории</h1>
 
-    <div class="block">
+    <div class="panel">
+
       <label>Название:</label>
-      <input id="title" placeholder="Введите название истории...">
+      <input id="title" placeholder="Введите название истории..."/>
 
       <label>Описание для ИИ:</label>
-      <textarea id="description"></textarea>
+      <textarea id="aiDesc" placeholder="Опишите сюжет, атмосферу, ограничения и особенности..."></textarea>
+
+      <label>Предыстория:</label>
+      <textarea id="past" placeholder="Что было до начала истории..."></textarea>
+
+      <label>Начальная сцена:</label>
+      <textarea id="start" placeholder="С чего начинается сюжет..."></textarea>
+
+      <div class="characters">
+        <h2>Персонажи:</h2>
+
+        <div id="charList"></div>
+
+        <button class="small-btn" onclick="addCharacter()">➕ Добавить персонажа</button>
+      </div>
+
+      <button onclick="saveStory()">💾 Сохранить историю</button>
+
+      <button class="back" onclick="goBack()">⬅ Назад в меню</button>
+
     </div>
-
-    <div class="block">
-      <label>Прошлое:</label>
-      <textarea id="past"></textarea>
-
-      <label>Начальная ситуация:</label>
-      <textarea id="startSituation"></textarea>
-    </div>
-
-    <div class="block">
-      <h3>Персонажи:</h3>
-      <div id="characters"></div>
-
-      <button class="add-btn" onclick="addCharacter()">➕ Добавить персонажа</button>
-      <button class="save-btn" onclick="saveStory()">💾 Сохранить историю</button>
-    </div>
-
   </div>
 
-<script>
-  let characters = [];
+  <script>
+    let characters = [];
 
-  function addCharacter() {
-    const id = Date.now();
-    characters.push({
-      id,
-      name: "",
-      role: "",
-      personality: "",
-      avatar: ""
-    });
-    renderCharacters();
-  }
-
-  function renderCharacters() {
-    const container = document.getElementById("characters");
-    container.innerHTML = "";
-
-    characters.forEach(ch => {
-      const card = document.createElement("div");
-      card.className = "character-card";
-
-      card.innerHTML = `
-        <button class="remove-btn" onclick="removeCharacter(${ch.id})">Удалить</button>
-
-        <div class="avatar">
-          ${ch.avatar ? `<img src="${ch.avatar}">` : ""}
-        </div>
-
-        <div class="char-fields">
-          <label>Имя:</label>
-          <input value="${ch.name}" oninput="updateField(${ch.id}, 'name', this.value)">
-
-          <label>Роль:</label>
-          <input value="${ch.role}" oninput="updateField(${ch.id}, 'role', this.value)">
-
-          <label>Характер:</label>
-          <textarea oninput="updateField(${ch.id}, 'personality', this.value)">${ch.personality}</textarea>
-
-          <input type="file" accept="image/*" style="display:none"
-            id="file_${ch.id}" onchange="uploadAvatar(event, ${ch.id})">
-
-          <button class="photo-btn" onclick="document.getElementById('file_${ch.id}').click()">
-            🖼 Выбрать фото
-          </button>
-        </div>
-      `;
-
-      container.appendChild(card);
-    });
-  }
-
-  function updateField(id, field, value) {
-    const ch = characters.find(c => c.id === id);
-    if (ch) ch[field] = value;
-  }
-
-  function removeCharacter(id) {
-    characters = characters.filter(c => c.id !== id);
-    renderCharacters();
-  }
-
-  function uploadAvatar(event, id) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      const ch = characters.find(c => c.id === id);
-      ch.avatar = e.target.result;
+    function addCharacter() {
+      const newChar = {
+        name: "",
+        role: "",
+        secret: ""
+      };
+      characters.push(newChar);
       renderCharacters();
-    };
-    reader.readAsDataURL(file);
-  }
+    }
 
-  function saveStory() {
-    const story = {
-      id: Date.now(),
-      title: document.getElementById("title").value,
-      description: document.getElementById("description").value,
-      setup: {
+    function renderCharacters() {
+      const container = document.getElementById("charList");
+      container.innerHTML = "";
+
+      characters.forEach((c, index) => {
+        container.innerHTML += `
+          <div class="char-card">
+            <div class="char-avatar"></div>
+            <div class="char-fields">
+              <input placeholder="Имя персонажа..."
+                value="${c.name}"
+                onchange="characters[${index}].name=this.value">
+
+              <input placeholder="Роль в сюжете..."
+                value="${c.role}"
+                onchange="characters[${index}].role=this.value">
+
+              <textarea placeholder="Характер и тайны..."
+                onchange="characters[${index}].secret=this.value">${c.secret}</textarea>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function saveStory() {
+      const story = {
+        title: document.getElementById("title").value,
+        aiDesc: document.getElementById("aiDesc").value,
         past: document.getElementById("past").value,
-        startSituation: document.getElementById("startSituation").value
-      },
-      characters
-    };
+        start: document.getElementById("start").value,
+        characters: characters
+      };
 
-    let list = JSON.parse(localStorage.getItem("horrorStories") || "[]");
-    list.push(story);
-    localStorage.setItem("horrorStories", JSON.stringify(list));
+      localStorage.setItem("horror_story_temp", JSON.stringify(story));
 
-    alert("История сохранена!");
-    location.href = "/";
-  }
+      alert("✅ История сохранена (пока временно в браузере)");
+    }
 
-  addCharacter();
-</script>
+    function goBack() {
+      window.location.href = "index.html";
+    }
+  </script>
 
 </body>
 </html>
