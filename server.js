@@ -4,32 +4,20 @@ import path from "path";
 
 const app = express();
 app.use(express.json());
-
-/* ============================= */
-/* ✅ Раздаём папку public */
-/* ============================= */
 app.use(express.static("public"));
 
-/* ============================= */
-/* ✅ Главная страница = меню */
-/* ============================= */
+/* ENV */
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
+const STORIES_PATH = process.env.STORIES_PATH || "stories";
+
+/* Главная */
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });
 
-/* ============================= */
-/* ✅ Проверка ключа Groq */
-/* ============================= */
-app.get("/testkey", (req, res) => {
-  if (!process.env.GROQ_API_KEY) {
-    return res.send("❌ GROQ_API_KEY НЕ найден");
-  }
-  res.send("✅ GROQ_API_KEY подключён");
-});
-
-/* ============================= */
-/* ✅ Chat API → Groq */
-/* ============================= */
+/* ===== Groq чат ===== */
 app.post("/api/chat", async (req, res) => {
   try {
     const response = await fetch(
@@ -44,79 +32,104 @@ app.post("/api/chat", async (req, res) => {
       }
     );
 
-    const data = await response.json();
-    res.json(data);
-
+    res.json(await response.json());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ============================= */
-/* ✅ СОХРАНЕНИЕ ИСТОРИИ В GITHUB */
-/* ============================= */
+/* ===== Список историй из GitHub ===== */
+app.get("/api/stories", async (req, res) => {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}?ref=${GITHUB_BRANCH}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json"
+    }
+  });
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    return res.json([]);
+  }
+
+  const list = data
+    .filter(f => f.name.endsWith(".json"))
+    .map(f => f.name);
+
+  res.json(list);
+});
+
+/* ===== Загрузка одной истории ===== */
+app.get("/api/story/:file", async (req, res) => {
+  const file = req.params.file;
+
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/${file}?ref=${GITHUB_BRANCH}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json"
+    }
+  });
+
+  const data = await response.json();
+
+  if (!data.content) {
+    return res.status(404).json({ error: "История не найдена" });
+  }
+
+  const decoded = Buffer.from(data.content, "base64").toString("utf8");
+  res.json(JSON.parse(decoded));
+});
+
+/* ===== Сохранение истории в GitHub ===== */
 app.post("/api/save-story", async (req, res) => {
   try {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
-    const branch = process.env.GITHUB_BRANCH || "main";
-    const folder = process.env.STORIES_PATH || "stories";
-
-    if (!token || !repo) {
-      return res.status(500).json({
-        error: "Нет GITHUB_TOKEN или GITHUB_REPO"
-      });
-    }
-
     const story = req.body;
-    const filename = story.filename;
 
-    if (!filename) {
-      return res.status(400).json({
-        error: "Нет filename"
-      });
+    if (!story.title) {
+      return res.status(400).json({ error: "Нет названия" });
     }
 
-    /* JSON → Base64 */
+    const filename =
+      story.title.toLowerCase().replace(/\s+/g, "_") + ".json";
+
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/${filename}`;
+
     const contentBase64 = Buffer.from(
-      JSON.stringify(story.data, null, 2)
+      JSON.stringify(story, null, 2)
     ).toString("base64");
 
-    /* GitHub API URL */
-    const url = `https://api.github.com/repos/${repo}/contents/${folder}/${filename}`;
-
-    const response = await fetch(url, {
+    const upload = await fetch(url, {
       method: "PUT",
       headers: {
-        Authorization: `token ${token}`,
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: "application/vnd.github+json",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message: "Добавлена новая история",
+        message: `Добавлена история: ${story.title}`,
         content: contentBase64,
-        branch: branch
+        branch: GITHUB_BRANCH
       })
     });
 
-    const result = await response.json();
+    const result = await upload.json();
 
-    if (response.status >= 400) {
+    if (!upload.ok) {
       return res.status(500).json(result);
     }
 
-    res.json({
-      success: true,
-      file: filename
-    });
-
+    res.json({ success: true, file: filename });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ============================= */
-/* ✅ Render порт */
-/* ============================= */
+/* Render */
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log("Horror-Studio работает на порту", PORT);
