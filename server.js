@@ -4,29 +4,16 @@ import path from "path";
 
 const app = express();
 app.use(express.json());
+
+/* Раздаём public */
 app.use(express.static("public"));
 
-/* ============================
-   ✅ ENV переменные
-============================ */
-
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
-const STORIES_PATH = process.env.STORIES_PATH || "stories";
-
-/* ============================
-   ✅ Главная страница (Меню)
-============================ */
-
+/* Главная страница */
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });
 
-/* ============================
-   ✅ Проверка GROQ ключа
-============================ */
-
+/* Проверка ключа */
 app.get("/testkey", (req, res) => {
   if (!process.env.GROQ_API_KEY) {
     return res.send("❌ GROQ_API_KEY НЕ найден");
@@ -34,10 +21,7 @@ app.get("/testkey", (req, res) => {
   res.send("✅ GROQ_API_KEY подключён");
 });
 
-/* ============================
-   ✅ Groq Chat API
-============================ */
-
+/* Chat API */
 app.post("/api/chat", async (req, res) => {
   try {
     const response = await fetch(
@@ -46,142 +30,71 @@ app.post("/api/chat", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`
         },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(req.body)
       }
     );
 
     const data = await response.json();
     res.json(data);
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ============================
-   ✅ Автосоздание папки stories/
-============================ */
-
-async function ensureStoriesFolder() {
+/* ✅ СОХРАНЕНИЕ ИСТОРИИ В GITHUB */
+app.post("/api/save-story", async (req, res) => {
   try {
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}?ref=${GITHUB_BRANCH}`;
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    const branch = process.env.GITHUB_BRANCH || "main";
+    const folder = process.env.STORIES_PATH || "stories";
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github+json",
-      },
-    });
-
-    /* ✅ Если папки нет → создаём */
-    if (response.status === 404) {
-      console.log("⚠ Папка stories не найдена → создаю...");
-
-      const createUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/.keep`;
-
-      const encoded = Buffer.from("folder created").toString("base64");
-
-      await fetch(createUrl, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          Accept: "application/vnd.github+json",
-        },
-        body: JSON.stringify({
-          message: "Создана папка stories/",
-          content: encoded,
-          branch: GITHUB_BRANCH,
-        }),
-      });
-
-      console.log("✅ stories/ создана автоматически!");
-    } else {
-      console.log("✅ stories/ уже существует");
-    }
-  } catch (err) {
-    console.log("❌ Ошибка автосоздания stories:", err.message);
-  }
-}
-
-/* ============================
-   ✅ GitHub Stories API
-============================ */
-
-/* ---------- GET список историй ---------- */
-app.get("/api/stories", async (req, res) => {
-  try {
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}?ref=${GITHUB_BRANCH}`;
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github+json",
-      },
-    });
-
-    if (!response.ok) {
+    if (!token || !repo) {
       return res.status(500).json({
-        error: "Ошибка GitHub API",
-        details: await response.text(),
+        error: "Нет GITHUB_TOKEN или GITHUB_REPO"
       });
     }
 
-    const files = await response.json();
+    const story = req.body;
+    const filename = story.filename;
 
-    const stories = files
-      .filter((f) => f.name.endsWith(".json"))
-      .map((f) => ({
-        name: f.name.replace(".json", ""),
-        url: f.download_url,
-      }));
+    const contentBase64 = Buffer.from(
+      JSON.stringify(story.data, null, 2)
+    ).toString("base64");
 
-    res.json(stories);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- POST сохранить историю ---------- */
-app.post("/api/saveStory", async (req, res) => {
-  try {
-    const { filename, content } = req.body;
-
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${STORIES_PATH}/${filename}.json`;
-
-    const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString(
-      "base64"
-    );
+    const url = `https://api.github.com/repos/${repo}/contents/${folder}/${filename}`;
 
     const response = await fetch(url, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: "application/vnd.github+json",
+        Authorization: `token ${token}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message: `Добавлена история: ${filename}`,
-        content: encoded,
-        branch: GITHUB_BRANCH,
-      }),
+        message: "Добавлена новая история",
+        content: contentBase64,
+        branch: branch
+      })
     });
 
-    const data = await response.json();
-    res.json(data);
+    const result = await response.json();
+
+    if (response.status >= 400) {
+      return res.status(500).json(result);
+    }
+
+    res.json({ success: true, file: filename });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ============================
-   ✅ Render запуск
-============================ */
-
+/* Render порт */
 const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, async () => {
-  console.log("🚀 Horror-Studio работает на порту", PORT);
-
-  /* ✅ Автопроверка stories при старте */
-  await ensureStoriesFolder();
+app.listen(PORT, () => {
+  console.log("Horror-Studio работает на порту", PORT);
 });
