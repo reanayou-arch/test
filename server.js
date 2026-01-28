@@ -14,13 +14,16 @@ app.get("/", (req, res) => {
 });
 
 /* ===========================
-   Проверка ключа Groq
+   Проверка ключей
 =========================== */
-app.get("/testkey", (req, res) => {
-  if (!process.env.GROQ_API_KEY) {
-    return res.send("❌ GROQ_API_KEY НЕ найден");
-  }
-  res.send("✅ GROQ_API_KEY подключён");
+app.get("/debug", (req, res) => {
+  res.json({
+    GROQ_API_KEY: !!process.env.GROQ_API_KEY,
+    GITHUB_TOKEN: !!process.env.GITHUB_TOKEN,
+    GITHUB_REPO: process.env.GITHUB_REPO,
+    STORIES_PATH: process.env.STORIES_PATH,
+    GITHUB_BRANCH: process.env.GITHUB_BRANCH
+  });
 });
 
 /* ===========================
@@ -31,30 +34,36 @@ app.get("/api/stories", async (req, res) => {
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
     const folder = process.env.STORIES_PATH || "stories";
+    const token = process.env.GITHUB_TOKEN;
 
     if (!repo) {
       return res.status(500).json({ error: "❌ GITHUB_REPO не задан" });
+    }
+
+    if (!token) {
+      return res.status(500).json({ error: "❌ GITHUB_TOKEN отсутствует в Render" });
     }
 
     const url = `https://api.github.com/repos/${repo}/contents/${folder}?ref=${branch}`;
 
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json"
       }
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      return res.status(404).json({
-        error: `❌ Папка stories не найдена или GitHub API ошибка (${response.status})`
+      return res.status(response.status).json({
+        error: `GitHub API ошибка`,
+        status: response.status,
+        details: data
       });
     }
 
-    const data = await response.json();
-
     const stories = data.filter(f => f.name.endsWith(".json"));
-
     res.json(stories);
 
   } catch (err) {
@@ -63,66 +72,94 @@ app.get("/api/stories", async (req, res) => {
 });
 
 /* ===========================
-   ✅ СОХРАНЕНИЕ ИСТОРИИ В GITHUB
+   Загрузить одну историю (для play.html)
+=========================== */
+app.get("/api/story/:name", async (req, res) => {
+  try {
+    const repo = process.env.GITHUB_REPO;
+    const branch = process.env.GITHUB_BRANCH || "main";
+    const folder = process.env.STORIES_PATH || "stories";
+    const token = process.env.GITHUB_TOKEN;
+
+    const fileName = req.params.name;
+
+    const url = `https://api.github.com/repos/${repo}/contents/${folder}/${fileName}?ref=${branch}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json"
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: "История не найдена",
+        details: data
+      });
+    }
+
+    // decode base64
+    const content = Buffer.from(data.content, "base64").toString("utf-8");
+    res.json(JSON.parse(content));
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ===========================
+   Сохранить историю в GitHub (author.html)
 =========================== */
 app.post("/api/save-story", async (req, res) => {
   try {
     const repo = process.env.GITHUB_REPO;
-    const token = process.env.GITHUB_TOKEN;
     const branch = process.env.GITHUB_BRANCH || "main";
     const folder = process.env.STORIES_PATH || "stories";
-
-    if (!repo || !token) {
-      return res.status(500).json({
-        error: "❌ Нет GITHUB_TOKEN или GITHUB_REPO"
-      });
-    }
+    const token = process.env.GITHUB_TOKEN;
 
     const story = req.body;
 
     if (!story.title) {
-      return res.status(400).json({
-        error: "❌ История без названия"
-      });
+      return res.json({ success: false, error: "Нет названия" });
     }
 
-    const filename =
-      story.title.toLowerCase().replace(/\s+/g, "_") + ".json";
+    const fileName = `${story.title}.json`;
 
-    const filePath = `${folder}/${filename}`;
+    const url = `https://api.github.com/repos/${repo}/contents/${folder}/${fileName}`;
 
-    const url = `https://api.github.com/repos/${repo}/contents/${filePath}`;
+    const body = {
+      message: `Добавлена история: ${story.title}`,
+      content: Buffer.from(JSON.stringify(story, null, 2)).toString("base64"),
+      branch
+    };
 
-    const contentBase64 = Buffer.from(
-      JSON.stringify(story, null, 2)
-    ).toString("base64");
-
-    const uploadResponse = await fetch(url, {
+    const response = await fetch(url, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json"
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        message: `Добавлена история: ${story.title}`,
-        content: contentBase64,
-        branch: branch
-      })
+      body: JSON.stringify(body)
     });
 
-    const result = await uploadResponse.json();
+    const data = await response.json();
 
-    if (!uploadResponse.ok) {
-      return res.status(500).json(result);
+    if (!response.ok) {
+      return res.json({
+        success: false,
+        error: "GitHub ошибка",
+        details: data
+      });
     }
 
-    res.json({
-      success: true,
-      file: filename
-    });
+    res.json({ success: true });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({ success: false, error: err.message });
   }
 });
 
