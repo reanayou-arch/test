@@ -1,175 +1,173 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Horror-Studio — Меню</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: radial-gradient(circle at top, #3a2a2a, #111);
+      font-family: Arial;
+      background: radial-gradient(circle at top, #3b2d2d, #0b0b0b);
       color: white;
       text-align: center;
-      padding: 20px;
     }
 
     h1 {
-      font-size: 48px;
-      margin-bottom: 20px;
+      margin-top: 50px;
+      font-size: 52px;
       font-weight: bold;
     }
 
     .btn-add {
-      width: 90%;
+      margin: 25px auto;
+      width: 85%;
       max-width: 420px;
       padding: 18px;
-      font-size: 20px;
+      font-size: 22px;
       border-radius: 18px;
       border: none;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255,255,255,0.08);
       color: white;
       cursor: pointer;
-      margin-bottom: 30px;
     }
 
-    .btn-add:hover {
-      background: rgba(255, 255, 255, 0.15);
+    .stories {
+      margin-top: 35px;
+      width: 90%;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .story-card {
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(255,255,255,0.08);
+      padding: 20px;
       border-radius: 20px;
-      padding: 18px;
-      width: 90%;
-      max-width: 440px;
-      margin: 15px auto;
-      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+      margin-bottom: 18px;
+      text-align: left;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
     }
 
     .story-title {
       font-size: 22px;
-      text-align: left;
-      margin-bottom: 14px;
       font-weight: bold;
+      margin-bottom: 15px;
     }
 
-    .actions {
+    .btn-row {
       display: flex;
       gap: 10px;
     }
 
-    .actions button {
+    .btn {
       flex: 1;
       padding: 14px;
       border: none;
-      border-radius: 14px;
+      border-radius: 15px;
       font-size: 18px;
       cursor: pointer;
       color: white;
-      font-weight: bold;
     }
 
-    .play {
+    .btn-play {
       background: darkred;
     }
 
-    .json {
+    .btn-json {
       background: darkgreen;
     }
 
-    .del {
-      background: #552222;
-    }
-
-    .actions button:hover {
-      opacity: 0.85;
+    .btn-del {
+      background: #4a1a1a;
     }
 
     .version {
-      margin-top: 30px;
+      margin-top: 40px;
       opacity: 0.5;
-      font-size: 14px;
+      font-size: 18px;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Horror-Studio</h1>
+  <h1>Horror-Studio - Меню</h1>
 
-  <!-- ➕ Добавить историю -->
-  <button class="btn-add" onclick="location.href='author.html'">
+  <button class="btn-add" onclick="alert('Панель автора будет позже')">
     ➕ Добавить историю
   </button>
 
-  <!-- Список историй -->
-  <div id="stories"></div>
+  <div class="stories">
+    <h2 style="text-align:left;">Список историй:</h2>
+
+    <div id="storiesList"></div>
+  </div>
 
   <div class="version">(Версия панели: V0.1.2)</div>
 
 <script>
-  // Загружаем истории
-  let stories = JSON.parse(localStorage.getItem("stories") || "[]");
+let selectedStory = null;
 
-  function renderStories() {
-    const box = document.getElementById("stories");
-    box.innerHTML = "";
+/* ===========================
+   ✅ Загрузка списка историй
+=========================== */
+async function loadStories() {
+  const box = document.getElementById("storiesList");
+  box.innerHTML = "Загрузка...";
 
-    if (stories.length === 0) {
-      box.innerHTML = "<p style='opacity:0.6'>Историй пока нет...</p>";
+  try {
+    const res = await fetch("/api/stories");
+    const stories = await res.json();
+
+    if (!stories.length) {
+      box.innerHTML = "<p>Историй пока нет.</p>";
       return;
     }
 
-    stories.forEach((story, i) => {
+    box.innerHTML = "";
 
+    stories.forEach(name => {
       const card = document.createElement("div");
       card.className = "story-card";
 
       card.innerHTML = `
-        <div class="story-title">📖 ${story.title}</div>
+        <div class="story-title">📖 ${name.replace(".json","")}</div>
 
-        <div class="actions">
-          <button class="play">▶ Играть</button>
-          <button class="json">⬇ JSON</button>
-          <button class="del">🗑</button>
+        <div class="btn-row">
+          <button class="btn btn-play">▶ Играть</button>
+          <button class="btn btn-json">⬇ JSON</button>
+          <button class="btn btn-del">🗑</button>
         </div>
       `;
 
-      /* ✅ ИГРАТЬ (фикс бага) */
-      card.querySelector(".play").onclick = () => {
-        localStorage.setItem("activeStory", i);
-        window.location.href = "play.html";
+      /* ▶ Играть */
+      card.querySelector(".btn-play").onclick = () => {
+        selectedStory = name;
+        window.location.href = "/play.html?story=" + encodeURIComponent(name);
       };
 
-      /* JSON скачать */
-      card.querySelector(".json").onclick = () => {
-        const blob = new Blob(
-          [JSON.stringify(story, null, 2)],
-          { type: "application/json" }
-        );
-
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = story.title + ".json";
-        a.click();
+      /* ⬇ Скачать JSON */
+      card.querySelector(".btn-json").onclick = () => {
+        window.open("/api/story/" + name, "_blank");
       };
 
-      /* Удалить */
-      card.querySelector(".del").onclick = () => {
-        if (!confirm("Удалить историю?")) return;
-
-        stories.splice(i, 1);
-        localStorage.setItem("stories", JSON.stringify(stories));
-        renderStories();
+      /* 🗑 Удалить (пока заглушка) */
+      card.querySelector(".btn-del").onclick = () => {
+        alert("Удаление будет добавлено позже.");
       };
 
       box.appendChild(card);
     });
-  }
 
-  renderStories();
+  } catch (err) {
+    box.innerHTML = "Ошибка загрузки историй.";
+  }
+}
+
+/* Автозагрузка */
+loadStories();
 </script>
 
 </body>
