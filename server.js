@@ -1,18 +1,44 @@
 import express from "express";
+import fetch from "node-fetch";
+import path from "path";
 
 const app = express();
 app.use(express.json());
 
-// Раздаём public/
+/* ✅ Раздаём папку public */
 app.use(express.static("public"));
 
+/* ✅ Главная страница = меню */
+app.get("/", (req, res) => {
+  res.sendFile(path.resolve("public/index.html"));
+});
+
+/* ✅ Панель автора */
+app.get("/author", (req, res) => {
+  res.sendFile(path.resolve("public/author.html"));
+});
+
+/* ✅ Игра (чат) */
+app.get("/play", (req, res) => {
+  res.sendFile(path.resolve("public/play.html"));
+});
+
+/* ✅ Проверка ключа */
+app.get("/testkey", (req, res) => {
+  if (!process.env.GROQ_API_KEY) {
+    return res.send("❌ GROQ_API_KEY НЕ найден");
+  }
+  res.send("✅ GROQ_API_KEY подключён");
+});
+
+/* ✅ Chat API */
 app.post("/api/chat", async (req, res) => {
   try {
-    const apiKey = process.env.GROQ_API_KEY;
-
-    if (!apiKey) {
+    if (!process.env.GROQ_API_KEY) {
       return res.status(500).json({
-        error: "Нет GROQ_API_KEY в Environment Variables"
+        error: {
+          message: "Нет GROQ_API_KEY в Render Environment Variables"
+        }
       });
     }
 
@@ -22,7 +48,7 @@ app.post("/api/chat", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + apiKey
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify(req.body)
       }
@@ -32,19 +58,16 @@ app.post("/api/chat", async (req, res) => {
     res.json(data);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: {
+        message: err.message
+      }
+    });
   }
 });
 
-// ✅ Тест ключа (временно)
-app.get("/testkey", (req, res) => {
-  if (!process.env.GROQ_API_KEY) {
-    return res.send("❌ GROQ_API_KEY НЕ найден");
-  }
-  res.send("✅ GROQ_API_KEY подключён");
-});
-
-const PORT = process.env.PORT || 3000;
+/* ✅ Render порт */
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log("Horror-Studio работает на порту", PORT);
 });
