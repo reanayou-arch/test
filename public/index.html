@@ -2,154 +2,171 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horror-Studio — Меню</title>
 
   <style>
     body {
       margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #3b2a2a, #111);
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #3a2a2a, #111);
       color: white;
-    }
-
-    .wrapper {
-      max-width: 430px;
-      margin: auto;
-      padding: 25px 15px;
+      text-align: center;
+      padding: 20px;
     }
 
     h1 {
-      text-align: center;
-      font-size: 38px;
-      margin-bottom: 25px;
-      font-family: Georgia, serif;
+      font-size: 48px;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
 
-    .menu-btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 18px;
-      border-radius: 14px;
+    .btn-add {
+      width: 90%;
+      max-width: 420px;
+      padding: 18px;
+      font-size: 20px;
+      border-radius: 18px;
       border: none;
-      background: rgba(255,255,255,0.10);
+      background: rgba(255, 255, 255, 0.08);
       color: white;
       cursor: pointer;
-      margin-bottom: 18px;
+      margin-bottom: 30px;
+    }
+
+    .btn-add:hover {
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .story-card {
-      background: rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 18px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 20px;
+      padding: 18px;
+      width: 90%;
+      max-width: 440px;
+      margin: 15px auto;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
     }
 
     .story-title {
-      font-size: 18px;
+      font-size: 22px;
+      text-align: left;
+      margin-bottom: 14px;
       font-weight: bold;
-      margin-bottom: 10px;
     }
 
-    .btn-row {
+    .actions {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .small-btn {
+    .actions button {
       flex: 1;
-      padding: 10px;
-      border-radius: 12px;
+      padding: 14px;
       border: none;
+      border-radius: 14px;
+      font-size: 18px;
       cursor: pointer;
-      font-size: 14px;
+      color: white;
       font-weight: bold;
     }
 
-    .play { background: darkred; color: white; }
-    .download { background: rgba(0,255,0,0.15); color: #b6ffb6; }
-    .delete { background: rgba(255,0,0,0.18); color: #ffaaaa; }
+    .play {
+      background: darkred;
+    }
+
+    .json {
+      background: darkgreen;
+    }
+
+    .del {
+      background: #552222;
+    }
+
+    .actions button:hover {
+      opacity: 0.85;
+    }
 
     .version {
-      text-align: center;
-      opacity: 0.4;
       margin-top: 30px;
-      font-size: 13px;
+      opacity: 0.5;
+      font-size: 14px;
     }
   </style>
 </head>
 
 <body>
-  <div class="wrapper">
 
-    <h1>Horror-Studio</h1>
+  <h1>Horror-Studio</h1>
 
-    <button class="menu-btn" onclick="location.href='/author'">
-      ➕ Добавить историю
-    </button>
+  <!-- ➕ Добавить историю -->
+  <button class="btn-add" onclick="location.href='author.html'">
+    ➕ Добавить историю
+  </button>
 
-    <div id="stories"></div>
+  <!-- Список историй -->
+  <div id="stories"></div>
 
-    <div class="version">(Версия панели: V0.1.2)</div>
-  </div>
+  <div class="version">(Версия панели: V0.1.2)</div>
 
 <script>
-  function loadStories() {
-    return JSON.parse(localStorage.getItem("horrorStories") || "[]");
-  }
+  // Загружаем истории
+  let stories = JSON.parse(localStorage.getItem("stories") || "[]");
 
   function renderStories() {
-    const container = document.getElementById("stories");
-    container.innerHTML = "";
-
-    const stories = loadStories();
+    const box = document.getElementById("stories");
+    box.innerHTML = "";
 
     if (stories.length === 0) {
-      container.innerHTML = "<p style='opacity:0.6'>Историй пока нет.</p>";
+      box.innerHTML = "<p style='opacity:0.6'>Историй пока нет...</p>";
       return;
     }
 
-    stories.forEach((story, index) => {
+    stories.forEach((story, i) => {
+
       const card = document.createElement("div");
       card.className = "story-card";
 
       card.innerHTML = `
         <div class="story-title">📖 ${story.title}</div>
 
-        <div class="btn-row">
-          <button class="small-btn play" onclick="startGame(${index})">▶ Играть</button>
-          <button class="small-btn download" onclick="downloadStory(${index})">⬇ JSON</button>
-          <button class="small-btn delete" onclick="deleteStory(${index})">🗑</button>
+        <div class="actions">
+          <button class="play">▶ Играть</button>
+          <button class="json">⬇ JSON</button>
+          <button class="del">🗑</button>
         </div>
       `;
 
-      container.appendChild(card);
+      /* ✅ ИГРАТЬ (фикс бага) */
+      card.querySelector(".play").onclick = () => {
+        localStorage.setItem("activeStory", i);
+        window.location.href = "play.html";
+      };
+
+      /* JSON скачать */
+      card.querySelector(".json").onclick = () => {
+        const blob = new Blob(
+          [JSON.stringify(story, null, 2)],
+          { type: "application/json" }
+        );
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = story.title + ".json";
+        a.click();
+      };
+
+      /* Удалить */
+      card.querySelector(".del").onclick = () => {
+        if (!confirm("Удалить историю?")) return;
+
+        stories.splice(i, 1);
+        localStorage.setItem("stories", JSON.stringify(stories));
+        renderStories();
+      };
+
+      box.appendChild(card);
     });
-  }
-
-  function startGame(index) {
-    localStorage.setItem("activeStory", index);
-    location.href = "/play";
-  }
-
-  function downloadStory(index) {
-    const stories = loadStories();
-    const blob = new Blob([JSON.stringify(stories[index], null, 2)], {
-      type: "application/json"
-    });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = stories[index].title + ".json";
-    link.click();
-  }
-
-  function deleteStory(index) {
-    let stories = loadStories();
-    stories.splice(index, 1);
-    localStorage.setItem("horrorStories", JSON.stringify(stories));
-    renderStories();
   }
 
   renderStories();
