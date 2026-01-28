@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Создание истории</title>
+
   <style>
     body {
       margin: 0;
@@ -36,8 +37,13 @@
       background: darkred;
       color: white;
     }
+
+    .back {
+      background: #333;
+    }
   </style>
 </head>
+
 <body>
 
 <h1>Создание истории</h1>
@@ -50,16 +56,16 @@
 
 <button onclick="saveStory()">💾 Сохранить историю</button>
 
-<button onclick="location.href='index.html'" style="background:#333;">
+<button class="back" onclick="location.href='index.html'">
   ← Назад в меню
 </button>
 
 <script>
-async function saveStory() {
+function saveStory() {
   const story = {
-    title: document.getElementById("title").value,
-    description: document.getElementById("desc").value,
-    startScene: document.getElementById("start").value
+    title: document.getElementById("title").value.trim(),
+    description: document.getElementById("desc").value.trim(),
+    startScene: document.getElementById("start").value.trim()
   };
 
   if (!story.title) {
@@ -67,20 +73,15 @@ async function saveStory() {
     return;
   }
 
-  const res = await fetch("/api/save-story", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(story)
-  });
+  let stories = JSON.parse(localStorage.getItem("horrorStories")) || [];
 
-  const data = await res.json();
+  stories.push(story);
 
-  if (data.success) {
-    alert("✅ История сохранена в GitHub!");
-    location.href = "index.html";
-  } else {
-    alert("❌ Ошибка: " + data.error);
-  }
+  localStorage.setItem("horrorStories", JSON.stringify(stories));
+
+  alert("✅ История сохранена в браузере!");
+
+  location.href = "index.html";
 }
 </script>
 
