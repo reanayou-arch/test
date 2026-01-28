@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Horror-Studio</title>
+  <title>Horror-Studio — Главное меню</title>
 
   <style>
     body {
@@ -28,7 +28,7 @@
       font-family: Georgia, serif;
     }
 
-    .add-btn {
+    .menu-btn {
       width: 100%;
       padding: 14px;
       font-size: 18px;
@@ -37,12 +37,16 @@
       background: rgba(255,255,255,0.08);
       color: white;
       cursor: pointer;
-      margin-bottom: 25px;
+      margin-bottom: 15px;
+    }
+
+    .menu-btn:hover {
+      background: rgba(255,255,255,0.14);
     }
 
     .section-title {
       font-size: 18px;
-      margin: 15px 0;
+      margin: 20px 0 10px;
       opacity: 0.8;
     }
 
@@ -54,25 +58,30 @@
       border: 1px solid rgba(255,255,255,0.08);
     }
 
-    .story-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+    .story-title {
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 10px;
     }
 
-    .story-title {
-      font-size: 18px;
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .small-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
       font-weight: bold;
     }
 
-    .btn {
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      margin-left: 6px;
+    .play {
+      background: darkred;
+      color: white;
     }
 
     .download {
@@ -83,63 +92,6 @@
     .delete {
       background: rgba(255,0,0,0.18);
       color: #ffaaaa;
-    }
-
-    .character {
-      display: flex;
-      gap: 12px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 14px;
-      padding: 10px;
-      margin-top: 10px;
-      align-items: flex-start;
-    }
-
-    .avatar {
-      width: 55px;
-      height: 55px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.15);
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .char-info {
-      flex: 1;
-    }
-
-    .char-name {
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    .char-role {
-      font-size: 13px;
-      opacity: 0.8;
-      margin-top: 2px;
-    }
-
-    .char-secret {
-      font-size: 12px;
-      opacity: 0.65;
-      margin-top: 6px;
-    }
-
-    .char-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .edit {
-      background: rgba(255,255,0,0.15);
-      color: #fff3aa;
     }
 
     .version {
@@ -156,30 +108,27 @@
 
     <h1>Horror-Studio</h1>
 
-    <button class="add-btn" onclick="location.href='author.html'">
+    <!-- Главное меню -->
+    <button class="menu-btn" onclick="location.href='/author'">
       ➕ Добавить историю
     </button>
 
-    <div class="section-title">Список историй:</div>
+    <button class="menu-btn" onclick="location.href='/play'">
+      🎮 Запустить тестовый чат
+    </button>
 
+    <!-- Истории -->
+    <div class="section-title">Список историй:</div>
     <div id="stories"></div>
 
     <div class="version">(Версия панели: V0.1.1)</div>
   </div>
 
 <script>
-  // Заглушка: временная история для теста
-  const stories = [
+  // Пока тестовая история (заглушка)
+  let stories = [
     {
-      title: "История",
-      characters: [
-        {
-          name: "Лена",
-          role: "Подруга главного героя",
-          personality: "Пугливая, держит что-то в секрете...",
-          avatar: "https://i.ibb.co/7bGZpWv/girl.jpg"
-        }
-      ]
+      title: "Тестовая история"
     }
   ];
 
@@ -192,35 +141,21 @@
       card.className = "story-card";
 
       card.innerHTML = `
-        <div class="story-header">
-          <div class="story-title">📖 ${story.title}</div>
-          <div>
-            <button class="btn download" onclick="downloadStory(${index})">⬇ Скачать</button>
-            <button class="btn delete" onclick="deleteStory(${index})">🗑 Удалить</button>
-          </div>
+        <div class="story-title">📖 ${story.title}</div>
+
+        <div class="btn-row">
+          <button class="small-btn play" onclick="location.href='/play'">
+            ▶ Играть
+          </button>
+
+          <button class="small-btn download" onclick="downloadStory(${index})">
+            ⬇ JSON
+          </button>
+
+          <button class="small-btn delete" onclick="deleteStory(${index})">
+            🗑
+          </button>
         </div>
-
-        ${story.characters.map((c, i) => `
-          <div class="character">
-            <div class="avatar">
-              <img src="${c.avatar}">
-            </div>
-
-            <div class="char-info">
-              <div class="char-name">Имя: ${c.name}</div>
-              <div class="char-role">Роль: ${c.role}</div>
-              <div class="char-secret">
-                <b>Характер и тайны:</b><br>
-                ${c.personality}
-              </div>
-            </div>
-
-            <div class="char-actions">
-              <button class="btn edit">✏ Редактировать</button>
-              <button class="btn delete">🗑 Удалить</button>
-            </div>
-          </div>
-        `).join("")}
       `;
 
       container.appendChild(card);
