@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Horror-Studio — Главное меню</title>
+  <title>Horror-Studio — Меню</title>
 
   <style>
     body {
@@ -24,7 +24,6 @@
       text-align: center;
       font-size: 38px;
       margin-bottom: 25px;
-      letter-spacing: 2px;
       font-family: Georgia, serif;
     }
 
@@ -33,21 +32,11 @@
       padding: 14px;
       font-size: 18px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.08);
+      border: none;
+      background: rgba(255,255,255,0.10);
       color: white;
       cursor: pointer;
-      margin-bottom: 15px;
-    }
-
-    .menu-btn:hover {
-      background: rgba(255,255,255,0.14);
-    }
-
-    .section-title {
-      font-size: 18px;
-      margin: 20px 0 10px;
-      opacity: 0.8;
+      margin-bottom: 18px;
     }
 
     .story-card {
@@ -55,18 +44,17 @@
       border-radius: 16px;
       padding: 14px;
       margin-bottom: 18px;
-      border: 1px solid rgba(255,255,255,0.08);
     }
 
     .story-title {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: bold;
       margin-bottom: 10px;
     }
 
     .btn-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
     }
 
     .small-btn {
@@ -79,20 +67,9 @@
       font-weight: bold;
     }
 
-    .play {
-      background: darkred;
-      color: white;
-    }
-
-    .download {
-      background: rgba(0,255,0,0.15);
-      color: #b6ffb6;
-    }
-
-    .delete {
-      background: rgba(255,0,0,0.18);
-      color: #ffaaaa;
-    }
+    .play { background: darkred; color: white; }
+    .download { background: rgba(0,255,0,0.15); color: #b6ffb6; }
+    .delete { background: rgba(255,0,0,0.18); color: #ffaaaa; }
 
     .version {
       text-align: center;
@@ -108,33 +85,30 @@
 
     <h1>Horror-Studio</h1>
 
-    <!-- Главное меню -->
     <button class="menu-btn" onclick="location.href='/author'">
       ➕ Добавить историю
     </button>
 
-    <button class="menu-btn" onclick="location.href='/play'">
-      🎮 Запустить тестовый чат
-    </button>
-
-    <!-- Истории -->
-    <div class="section-title">Список историй:</div>
     <div id="stories"></div>
 
-    <div class="version">(Версия панели: V0.1.1)</div>
+    <div class="version">(Версия панели: V0.1.2)</div>
   </div>
 
 <script>
-  // Пока тестовая история (заглушка)
-  let stories = [
-    {
-      title: "Тестовая история"
-    }
-  ];
+  function loadStories() {
+    return JSON.parse(localStorage.getItem("horrorStories") || "[]");
+  }
 
   function renderStories() {
     const container = document.getElementById("stories");
     container.innerHTML = "";
+
+    const stories = loadStories();
+
+    if (stories.length === 0) {
+      container.innerHTML = "<p style='opacity:0.6'>Историй пока нет.</p>";
+      return;
+    }
 
     stories.forEach((story, index) => {
       const card = document.createElement("div");
@@ -144,17 +118,9 @@
         <div class="story-title">📖 ${story.title}</div>
 
         <div class="btn-row">
-          <button class="small-btn play" onclick="location.href='/play'">
-            ▶ Играть
-          </button>
-
-          <button class="small-btn download" onclick="downloadStory(${index})">
-            ⬇ JSON
-          </button>
-
-          <button class="small-btn delete" onclick="deleteStory(${index})">
-            🗑
-          </button>
+          <button class="small-btn play" onclick="startGame(${index})">▶ Играть</button>
+          <button class="small-btn download" onclick="downloadStory(${index})">⬇ JSON</button>
+          <button class="small-btn delete" onclick="deleteStory(${index})">🗑</button>
         </div>
       `;
 
@@ -162,11 +128,16 @@
     });
   }
 
+  function startGame(index) {
+    localStorage.setItem("activeStory", index);
+    location.href = "/play";
+  }
+
   function downloadStory(index) {
-    const blob = new Blob(
-      [JSON.stringify(stories[index], null, 2)],
-      { type: "application/json" }
-    );
+    const stories = loadStories();
+    const blob = new Blob([JSON.stringify(stories[index], null, 2)], {
+      type: "application/json"
+    });
 
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -175,7 +146,9 @@
   }
 
   function deleteStory(index) {
+    let stories = loadStories();
     stories.splice(index, 1);
+    localStorage.setItem("horrorStories", JSON.stringify(stories));
     renderStories();
   }
 
