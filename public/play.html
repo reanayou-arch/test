@@ -26,6 +26,7 @@
       padding: 10px 14px;
       border-radius: 16px;
       max-width: 80%;
+      white-space: pre-wrap;
     }
 
     .npc {
@@ -36,6 +37,11 @@
     .player {
       background: rgba(0,120,255,0.55);
       align-self: flex-end;
+    }
+
+    .error {
+      background: rgba(255,0,0,0.25);
+      align-self: flex-start;
     }
 
     .input-area {
@@ -103,24 +109,43 @@
 
       addMessage("...", "npc");
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama3-8b-8192",
-          messages: history,
-          temperature: 0.8
-        })
-      });
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "llama3-8b-8192",
+            messages: history,
+            temperature: 0.8
+          })
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      chatEl.lastChild.remove();
+        // удалить "..."
+        chatEl.lastChild.remove();
 
-      const reply = data.choices[0].message.content;
-      history.push({ role: "assistant", content: reply });
+        // если Groq вернул ошибку
+        if (data.error) {
+          addMessage("❌ Groq Error:\n" + JSON.stringify(data.error, null, 2), "error");
+          return;
+        }
 
-      addMessage(reply, "npc");
+        if (!data.choices) {
+          addMessage("❌ Нет ответа от модели.\n" + JSON.stringify(data, null, 2), "error");
+          return;
+        }
+
+        const reply = data.choices[0].message.content;
+
+        history.push({ role: "assistant", content: reply });
+
+        addMessage(reply, "npc");
+
+      } catch (err) {
+        chatEl.lastChild.remove();
+        addMessage("❌ Ошибка запроса:\n" + err.message, "error");
+      }
     }
   </script>
 
