@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Horror-Studio — Меню</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: radial-gradient(#3a2a2a, #000);
       color: white;
       text-align: center;
+      min-height: 100vh;
     }
 
     h1 {
       margin-top: 50px;
-      font-size: 46px;
+      font-size: 48px;
     }
 
     button {
@@ -31,24 +32,36 @@
     .add {
       background: #444;
       color: white;
-      width: 80%;
+      width: 85%;
       max-width: 420px;
     }
 
     .storyBox {
-      margin: 25px auto;
+      margin: 20px auto;
       width: 85%;
-      max-width: 520px;
+      max-width: 500px;
       background: rgba(255,255,255,0.08);
       padding: 20px;
       border-radius: 20px;
+      text-align: center;
     }
 
     .storyBtn {
       background: darkred;
       color: white;
-      width: 160px;
+      width: 170px;
+      padding: 14px;
+      border-radius: 15px;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
       margin-top: 10px;
+    }
+
+    .empty {
+      margin-top: 20px;
+      opacity: 0.7;
+      font-size: 18px;
     }
   </style>
 </head>
@@ -57,7 +70,7 @@
 
 <h1>Horror-Studio</h1>
 
-<!-- Добавить историю -->
+<!-- Кнопка автора -->
 <button class="add" onclick="location.href='author.html'">
   ➕ Добавить историю
 </button>
@@ -67,20 +80,21 @@
 <div id="stories"></div>
 
 <script>
-/* ===========================
-   ✅ Загрузка историй из localStorage
-=========================== */
+/* ===============================
+   Загрузка историй из localStorage
+================================ */
 
 function loadStories() {
   const box = document.getElementById("stories");
-  box.innerHTML = "";
 
-  let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
+  const stories = JSON.parse(localStorage.getItem("horrorStories") || "[]");
 
   if (stories.length === 0) {
-    box.innerHTML = "Историй пока нет. Создай первую!";
+    box.innerHTML = `<div class="empty">Историй пока нет.</div>`;
     return;
   }
+
+  box.innerHTML = "";
 
   stories.forEach((story, index) => {
     const div = document.createElement("div");
@@ -97,27 +111,18 @@ function loadStories() {
   });
 }
 
-/* ===========================
-   ✅ Запуск истории
-=========================== */
+/* ===============================
+   Запуск истории
+================================ */
 
 function playStory(index) {
-
-  let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
-
-  if (!stories[index]) {
-    alert("❌ История не найдена!");
-    return;
-  }
-
-  // ✅ Сохраняем индекс выбранной истории
-  localStorage.setItem("currentStoryIndex", index);
-
-  // Переход в чат
-  location.href = "play.html";
+  location.href = "play.html?local=" + index;
 }
 
-/* Авто запуск */
+/* ===============================
+   Автообновление
+================================ */
+
 loadStories();
 </script>
 
