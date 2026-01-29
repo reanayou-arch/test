@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Создание истории</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
@@ -26,7 +26,6 @@
       border-radius: 12px;
       border: none;
       font-size: 16px;
-      outline: none;
       box-sizing: border-box;
     }
 
@@ -42,15 +41,12 @@
       color: white;
     }
 
-    button:hover {
-      opacity: 0.9;
-    }
-
     .back {
       background: #333;
     }
   </style>
 </head>
+
 <body>
 
 <h1>➕ Создание истории</h1>
@@ -61,10 +57,10 @@
 
 <textarea id="start" rows="4" placeholder="Начальная сцена"></textarea>
 
-<button onclick="saveStory()">💾 Сохранить историю</button>
+<button onclick="saveStory()">💾 Сохранить</button>
 
 <button class="back" onclick="location.href='index.html'">
-  ← Назад в меню
+  ← Назад
 </button>
 
 <script>
@@ -74,27 +70,20 @@ function saveStory() {
   const description = document.getElementById("desc").value.trim();
   const startScene = document.getElementById("start").value.trim();
 
-  if (!title) {
-    alert("❌ Введите название истории!");
-    return;
-  }
+  if (!title) return alert("Введите название!");
+  if (!startScene) return alert("Введите начальную сцену!");
 
-  // Загружаем текущий список
-  let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
+  let stories = JSON.parse(localStorage.getItem("horrorStories") || "[]");
 
-  // Добавляем новую историю
   stories.push({
-    title: title,
-    description: description,
-    startScene: startScene
+    title,
+    description,
+    startScene
   });
 
-  // Сохраняем обратно
-  localStorage.setItem("storiesList", JSON.stringify(stories));
+  localStorage.setItem("horrorStories", JSON.stringify(stories));
 
-  alert("✅ История сохранена в браузере!");
-
-  // Возвращаемся в меню
+  alert("✅ История сохранена!");
   location.href = "index.html";
 }
 </script>
