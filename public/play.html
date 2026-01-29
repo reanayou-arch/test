@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Horror-Studio — Чат</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Horror-Studio — Игра</title>
 
   <style>
     body {
@@ -11,16 +11,15 @@
       font-family: Arial;
       background: #111;
       color: white;
-      height: 100vh;
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
 
     header {
       padding: 15px;
-      background: #1c1c1c;
+      background: #000;
       font-size: 20px;
-      font-weight: bold;
       border-bottom: 1px solid #333;
     }
 
@@ -30,7 +29,7 @@
       padding: 15px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .msg {
@@ -39,30 +38,29 @@
       border-radius: 18px;
       font-size: 16px;
       line-height: 1.3;
-      word-wrap: break-word;
     }
 
     .bot {
-      align-self: flex-start;
       background: #2a2a2a;
+      align-self: flex-start;
     }
 
     .user {
-      align-self: flex-end;
       background: darkred;
+      align-self: flex-end;
     }
 
     footer {
       display: flex;
       padding: 10px;
-      background: #1c1c1c;
       border-top: 1px solid #333;
+      background: #000;
     }
 
     input {
       flex: 1;
       padding: 12px;
-      border-radius: 20px;
+      border-radius: 18px;
       border: none;
       outline: none;
       font-size: 16px;
@@ -70,25 +68,23 @@
 
     button {
       margin-left: 10px;
-      border: none;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      font-size: 20px;
-      cursor: pointer;
+      border: none;
       background: darkred;
       color: white;
+      font-size: 20px;
+      cursor: pointer;
     }
 
-    .backBtn {
+    .back {
       width: 100%;
       padding: 14px;
-      border-radius: 15px;
+      border: none;
       background: #333;
       color: white;
-      border: none;
       cursor: pointer;
-      margin-top: 10px;
       font-size: 16px;
     }
   </style>
@@ -96,31 +92,23 @@
 
 <body>
 
-<header>Horror-Studio — Чат</header>
+<header id="storyTitle">История</header>
 
 <div id="chat"></div>
 
 <footer>
-  <input id="input" placeholder="Напишите сообщение..." />
-  <button onclick="sendMsg()">➤</button>
+  <input id="text" placeholder="Ваш ответ...">
+  <button onclick="send()">➤</button>
 </footer>
 
-<button class="backBtn" onclick="location.href='index.html'">
+<button class="back" onclick="location.href='index.html'">
   ← Назад в меню
 </button>
 
 <script>
-/* ============================
-   Загрузка истории из localStorage
-============================ */
-const params = new URLSearchParams(location.search);
-const localIndex = params.get("local");
-
-const stories = JSON.parse(localStorage.getItem("horrorStories") || "[]");
-
 const chat = document.getElementById("chat");
 
-function addMessage(text, who) {
+function add(text, who) {
   const div = document.createElement("div");
   div.className = "msg " + who;
   div.textContent = text;
@@ -128,60 +116,64 @@ function addMessage(text, who) {
   chat.scrollTop = chat.scrollHeight;
 }
 
-/* ============================
-   Проверка истории
-============================ */
-if (localIndex === null || !stories[localIndex]) {
-  addMessage("❌ Ошибка: История не выбрана.", "bot");
-} else {
-  const story = stories[localIndex];
+/* ===== Загрузка истории ===== */
+const params = new URLSearchParams(location.search);
+const index = params.get("local");
 
-  addMessage("📖 Начало истории:", "bot");
-  addMessage(story.startScene || "Начальная сцена не задана.", "bot");
+const stories = JSON.parse(localStorage.getItem("horrorStories") || "[]");
+
+if (index === null || !stories[index]) {
+  add("❌ История не выбрана.", "bot");
+  throw new Error("No story");
 }
 
-/* ============================
-   Отправка сообщений в Groq
-============================ */
-async function sendMsg() {
-  const input = document.getElementById("input");
+const story = stories[index];
+document.getElementById("storyTitle").textContent = story.title;
+
+add(story.startScene, "bot");
+
+/* ===== Отправка игрока ===== */
+async function send() {
+  const input = document.getElementById("text");
   const text = input.value.trim();
   if (!text) return;
 
-  addMessage(text, "user");
+  add(text, "user");
   input.value = "";
 
-  addMessage("...", "bot");
+  add("⏳ ...", "bot");
 
   try {
-    const response = await fetch("/api/chat", {
+    const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          { role: "system", content: "Ты персонаж хоррор-истории. Отвечай атмосферно." },
-          { role: "user", content: text }
+          {
+            role: "system",
+            content: "Ты хоррор-повествователь. Продолжай историю короткими репликами."
+          },
+          {
+            role: "assistant",
+            content: story.startScene
+          },
+          {
+            role: "user",
+            content: text
+          }
         ]
       })
     });
 
-    const data = await response.json();
-
+    const data = await res.json();
     chat.lastChild.remove();
 
-    if (data.error) {
-      addMessage("❌ Ошибка Groq: " + data.error.message, "bot");
-      return;
-    }
-
-    const reply = data.choices?.[0]?.message?.content;
-
-    addMessage(reply || "❌ Нет ответа от модели.", "bot");
+    add(data.choices[0].message.content, "bot");
 
   } catch (err) {
     chat.lastChild.remove();
-    addMessage("❌ Ошибка соединения с сервером.", "bot");
+    add("❌ Ошибка соединения.", "bot");
   }
 }
 </script>
