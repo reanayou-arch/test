@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Horror-Studio — Меню</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Horror-Studio</title>
 
   <style>
     body {
@@ -12,28 +12,25 @@
       background: radial-gradient(#3a2a2a, #000);
       color: white;
       text-align: center;
-      min-height: 100vh;
     }
 
     h1 {
       margin-top: 50px;
-      font-size: 48px;
+      font-size: 46px;
     }
 
-    button {
-      padding: 18px 30px;
+    .addBtn {
+      width: 85%;
+      max-width: 420px;
+      padding: 18px;
       border-radius: 20px;
       border: none;
       font-size: 20px;
-      cursor: pointer;
-      margin: 15px;
-    }
-
-    .add {
       background: #444;
       color: white;
-      width: 85%;
-      max-width: 420px;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
     }
 
     .storyBox {
@@ -43,25 +40,22 @@
       background: rgba(255,255,255,0.08);
       padding: 20px;
       border-radius: 20px;
-      text-align: center;
     }
 
-    .storyBtn {
+    .playBtn {
       background: darkred;
       color: white;
-      width: 170px;
-      padding: 14px;
-      border-radius: 15px;
-      font-size: 18px;
       border: none;
+      padding: 14px 20px;
+      border-radius: 15px;
       cursor: pointer;
+      font-size: 18px;
       margin-top: 10px;
     }
 
     .empty {
-      margin-top: 20px;
       opacity: 0.7;
-      font-size: 18px;
+      margin-top: 25px;
     }
   </style>
 </head>
@@ -70,20 +64,14 @@
 
 <h1>Horror-Studio</h1>
 
-<!-- Кнопка автора -->
-<button class="add" onclick="location.href='author.html'">
+<button class="addBtn" onclick="location.href='author.html'">
   ➕ Добавить историю
 </button>
 
-<h2>Список историй:</h2>
-
+<h2>Истории:</h2>
 <div id="stories"></div>
 
 <script>
-/* ===============================
-   Загрузка историй из localStorage
-================================ */
-
 function loadStories() {
   const box = document.getElementById("stories");
 
@@ -102,7 +90,7 @@ function loadStories() {
 
     div.innerHTML = `
       <h3>📖 ${story.title}</h3>
-      <button class="storyBtn" onclick="playStory(${index})">
+      <button class="playBtn" onclick="startGame(${index})">
         ▶ Играть
       </button>
     `;
@@ -111,17 +99,9 @@ function loadStories() {
   });
 }
 
-/* ===============================
-   Запуск истории
-================================ */
-
-function playStory(index) {
+function startGame(index) {
   location.href = "play.html?local=" + index;
 }
-
-/* ===============================
-   Автообновление
-================================ */
 
 loadStories();
 </script>
