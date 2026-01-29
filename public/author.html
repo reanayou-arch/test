@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Создание истории</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: radial-gradient(#222, #000);
       color: white;
       padding: 20px;
@@ -16,17 +16,17 @@
 
     h1 {
       text-align: center;
-      font-size: 36px;
       margin-bottom: 25px;
     }
 
     input, textarea {
       width: 100%;
       padding: 14px;
-      margin: 12px 0;
+      margin: 10px 0;
       border-radius: 12px;
       border: none;
       font-size: 16px;
+      outline: none;
       box-sizing: border-box;
     }
 
@@ -42,19 +42,22 @@
       color: white;
     }
 
+    button:hover {
+      opacity: 0.9;
+    }
+
     .back {
       background: #333;
     }
   </style>
 </head>
-
 <body>
 
 <h1>➕ Создание истории</h1>
 
 <input id="title" placeholder="Название истории">
 
-<textarea id="desc" rows="5" placeholder="Описание сюжета для ИИ"></textarea>
+<textarea id="desc" rows="4" placeholder="Описание сюжета (для ИИ)"></textarea>
 
 <textarea id="start" rows="4" placeholder="Начальная сцена"></textarea>
 
@@ -65,10 +68,6 @@
 </button>
 
 <script>
-/* ===========================
-   ✅ Сохранение истории в localStorage
-=========================== */
-
 function saveStory() {
 
   const title = document.getElementById("title").value.trim();
@@ -80,28 +79,20 @@ function saveStory() {
     return;
   }
 
-  if (!startScene) {
-    alert("❌ Введите начальную сцену!");
-    return;
-  }
-
-  // Собираем историю
-  const story = {
-    title: title,
-    description: description,
-    startScene: startScene
-  };
-
-  // Загружаем список историй
+  // Загружаем текущий список
   let stories = JSON.parse(localStorage.getItem("storiesList") || "[]");
 
   // Добавляем новую историю
-  stories.push(story);
+  stories.push({
+    title: title,
+    description: description,
+    startScene: startScene
+  });
 
   // Сохраняем обратно
   localStorage.setItem("storiesList", JSON.stringify(stories));
 
-  alert("✅ История сохранена!");
+  alert("✅ История сохранена в браузере!");
 
   // Возвращаемся в меню
   location.href = "index.html";
